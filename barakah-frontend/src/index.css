@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme color tokens ── */
+:root {
+  --color-page:       250 247 241;   /* #faf7f1  warm parchment         */
+  --color-surface:    255 255 255;   /* white    cards / panels          */
+  --color-heading:     15  35  24;   /* #0f2318  deep forest green       */
+  --color-body:        61  79  70;   /* #3d4f46  dark olive              */
+  --color-muted:      122 138 130;   /* #7a8a82  sage gray               */
+  --color-gold:       146 112  45;   /* #926f2d  rich manuscript gold    */
+  --color-gold-light: 170 135  60;   /* #aa873c  lighter gold            */
+}
+
+.dark {
+  --color-page:         4  15   7;   /* #040f07  deep night green        */
+  --color-surface:    255 255 255;   /* white    used at low alpha       */
+  --color-heading:    255 255 255;   /* white                            */
+  --color-body:       255 255 255;   /* white                            */
+  --color-muted:      154 176 162;   /* #9ab0a2  soft sage               */
+  --color-gold:       200 168  85;   /* #c8a855  bright gold             */
+  --color-gold-light: 212 185 106;   /* #d4b96a  warm gold               */
+}
+
+@font-face {
+  font-family: 'Cerialebaran';
+  src: url('./fonts/Cerialebaran-j1zM.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'LiHasanIccheghuri';
+  src: url('./fonts/LiHasanIccheghuriUnicode-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'LiMehdiEkushey';
+  src: url('./fonts/Li Mehdi Ekushey Unicode.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}

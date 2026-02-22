@@ -1,0 +1,27 @@
+# Web Framework
+fastapi
+uvicorn[standard]
+
+# MongoDB
+motor
+pymongo
+
+# Authentication
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+
+# Google OAuth
+httpx
+
+# Email
+aiosmtplib
+python-multipart
+
+# Validation & Settings
+pydantic[email]
+pydantic-settings
+email-validator
+
+# Utilities
+python-dotenv

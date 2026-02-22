@@ -1,0 +1,98 @@
+/* ── Islamic geometric tile background ── */
+.geo-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect x='20' y='20' width='40' height='40' rx='1' transform='rotate(45 40 40)' fill='none' stroke='rgba(146,112,45,0.045)' stroke-width='0.6'/%3E%3Ccircle cx='40' cy='40' r='3' fill='none' stroke='rgba(146,112,45,0.03)' stroke-width='0.4'/%3E%3Ccircle cx='0' cy='0' r='3' fill='none' stroke='rgba(146,112,45,0.03)' stroke-width='0.4'/%3E%3Ccircle cx='80' cy='0' r='3' fill='none' stroke='rgba(146,112,45,0.03)' stroke-width='0.4'/%3E%3Ccircle cx='0' cy='80' r='3' fill='none' stroke='rgba(146,112,45,0.03)' stroke-width='0.4'/%3E%3Ccircle cx='80' cy='80' r='3' fill='none' stroke='rgba(146,112,45,0.03)' stroke-width='0.4'/%3E%3C/svg%3E");
+  background-size: 80px 80px;
+}
+
+.dark .geo-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect x='20' y='20' width='40' height='40' rx='1' transform='rotate(45 40 40)' fill='none' stroke='rgba(255,255,255,0.025)' stroke-width='0.6'/%3E%3Ccircle cx='40' cy='40' r='3' fill='none' stroke='rgba(255,255,255,0.015)' stroke-width='0.4'/%3E%3Ccircle cx='0' cy='0' r='3' fill='none' stroke='rgba(255,255,255,0.015)' stroke-width='0.4'/%3E%3Ccircle cx='80' cy='0' r='3' fill='none' stroke='rgba(255,255,255,0.015)' stroke-width='0.4'/%3E%3Ccircle cx='0' cy='80' r='3' fill='none' stroke='rgba(255,255,255,0.015)' stroke-width='0.4'/%3E%3Ccircle cx='80' cy='80' r='3' fill='none' stroke='rgba(255,255,255,0.015)' stroke-width='0.4'/%3E%3C/svg%3E");
+}
+
+/* ── Marquee ── */
+.marqueeViewport {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.marqueeTrack {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  animation: marqueeSlide 30s linear infinite;
+}
+
+.marqueeViewport:hover .marqueeTrack {
+  animation-play-state: paused;
+}
+
+@keyframes marqueeSlide {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Float (crescent moon) ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-18px); }
+}
+.animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+/* ── Slow spin (Islamic stars) ── */
+@keyframes spinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spinSlow 35s linear infinite;
+}
+
+@keyframes spinSlowR {
+  from { transform: rotate(360deg); }
+  to   { transform: rotate(0deg); }
+}
+.animate-spin-slow-r {
+  animation: spinSlowR 28s linear infinite;
+}
+
+/* ── Pulse ring (discovery circles) ── */
+@keyframes pulseRing {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  50%      { transform: scale(1.04); opacity: 0.65; }
+}
+.animate-pulse-ring {
+  animation: pulseRing 4s ease-in-out infinite;
+}
+
+/* ── Bangla mode font overrides ── */
+.lang-bn {
+  font-family: 'LiMehdiEkushey', sans-serif;
+}
+
+.lang-bn .font-cerialebaran {
+  font-family: 'LiHasanIccheghuri', serif !important;
+}
+
+/* Keep logo font intact (Latin text) */
+.lang-bn .logo-text {
+  font-family: 'Cerialebaran', cursive !important;
+}
+
+/* Bangla body text reads smaller at same px — bump up general text */
+.lang-bn p,
+.lang-bn li,
+.lang-bn blockquote {
+  font-size: 1.13em;
+  line-height: 1.85;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .marqueeViewport { mask-image: none; }
+  .marqueeTrack    { animation: none; }
+  .animate-float,
+  .animate-spin-slow,
+  .animate-spin-slow-r,
+  .animate-pulse-ring { animation: none; }
+}
