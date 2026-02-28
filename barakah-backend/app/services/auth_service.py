@@ -30,7 +30,7 @@ class AuthService:
 
     # ─── Signup ──────────────────────────────────────────────────────────
 
-    async def signup(self, first_name: str, last_name: str, email: str, password: str) -> dict:
+    async def signup(self, first_name: str, last_name: str, email: str, password: str, is_shop_owner: bool = False) -> dict:
         """
         Register a new local user.
         Returns the user document + token pair.
@@ -48,6 +48,7 @@ class AuthService:
             )
 
         # Create user
+        role = "shop_owner" if is_shop_owner else "user"
         user = await self.user_repo.create(
             {
                 "first_name": first_name.strip(),
@@ -55,6 +56,7 @@ class AuthService:
                 "email": email,
                 "hashed_password": hash_password(password),
                 "auth_provider": "local",
+                "role": role,
             }
         )
 

@@ -4,6 +4,7 @@ Security utilities — password hashing, JWT creation & verification.
 
 import secrets
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
@@ -30,7 +31,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 # ── JWT helpers ──────────────────────────────────────────────────────────────
 
-def create_access_token(user_id: str, extra_claims: dict | None = None) -> str:
+def create_access_token(user_id: str, extra_claims: Optional[dict] = None) -> str:
     """Generate a short-lived access token."""
     settings = get_settings()
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)

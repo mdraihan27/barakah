@@ -51,13 +51,13 @@ class UserRepository:
         Automatically sets timestamps and normalises the email.
         """
         now = datetime.now(timezone.utc)
-        user_data.setdefault("email", "").lower()
-        user_data["email"] = user_data["email"].lower()
+        user_data["email"] = user_data.get("email", "").lower()
         user_data.update(
             {
                 "is_email_verified": user_data.get("is_email_verified", False),
                 "is_active": True,
                 "auth_provider": user_data.get("auth_provider", "local"),
+                "role": user_data.get("role", "user"),
                 "avatar_url": user_data.get("avatar_url"),
                 "verification_code": None,
                 "verification_code_expires_at": None,

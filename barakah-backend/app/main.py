@@ -1,8 +1,9 @@
 """
 Barakah Backend — FastAPI application entry point.
-Sets up middleware, lifespan events, and route registration.
+Sets up middleware, lifespan events, background tasks, and route registration.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,8 +12,30 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.core.database import close_mongo_connection, connect_to_mongo, get_database
 from app.core.logging import get_logger, setup_logging
+
+# ── Domain repositories (for index setup) ───────────────────────────────────
 from app.repositories.user_repository import UserRepository
-from app.routes import auth
+from app.repositories.shop_repository import ShopRepository
+from app.repositories.product_repository import ProductRepository
+from app.repositories.review_repository import ReviewRepository
+from app.repositories.wishlist_repository import WishlistRepository
+from app.repositories.notification_repository import NotificationRepository
+from app.repositories.chat_repository import ChatRepository
+
+# ── Route modules ───────────────────────────────────────────────────────────
+from app.api.v1 import (
+    auth,
+    shops,
+    products,
+    search,
+    reviews,
+    wishlist,
+    notifications,
+    chat,
+)
+
+# ── Background tasks ────────────────────────────────────────────────────────
+from app.tasks.price_monitor import run_price_monitor
 
 # ── Bootstrap logging before anything else ──────────────────────────────────
 settings = get_settings()
@@ -27,19 +50,44 @@ async def lifespan(app: FastAPI):
     """Run setup on startup, teardown on shutdown."""
     logger.info("Starting %s v%s (%s)", settings.APP_NAME, settings.APP_VERSION, settings.APP_ENV)
 
-    # Startup
+    # Startup — connect to MongoDB
     await connect_to_mongo()
 
-    # Ensure DB indexes
+    # Ensure DB indexes for all collections
     db = get_database()
-    user_repo = UserRepository(db)
-    await user_repo.ensure_indexes()
+    await _ensure_all_indexes(db)
+
+    # Start background tasks
+    monitor_task = asyncio.create_task(run_price_monitor())
+    logger.info("Background price monitor task started.")
 
     yield  # ← application is running
 
-    # Shutdown
+    # Shutdown — cancel background tasks
+    monitor_task.cancel()
+    try:
+        await monitor_task
+    except asyncio.CancelledError:
+        pass
+
     await close_mongo_connection()
     logger.info("Application shutdown complete.")
+
+
+async def _ensure_all_indexes(db) -> None:
+    """Create indexes for every collection at startup."""
+    repos = [
+        UserRepository(db),
+        ShopRepository(db),
+        ProductRepository(db),
+        ReviewRepository(db),
+        WishlistRepository(db),
+        NotificationRepository(db),
+        ChatRepository(db),
+    ]
+    for repo in repos:
+        await repo.ensure_indexes()
+    logger.info("All collection indexes ensured.")
 
 
 # ── Application factory ────────────────────────────────────────────────────
@@ -65,7 +113,16 @@ app.add_middleware(
 
 # ── Register routers ───────────────────────────────────────────────────────
 
-app.include_router(auth.router, prefix="/api/v1")
+_API_PREFIX = "/api/v1"
+
+app.include_router(auth.router, prefix=_API_PREFIX)
+app.include_router(shops.router, prefix=_API_PREFIX)
+app.include_router(products.router, prefix=_API_PREFIX)
+app.include_router(search.router, prefix=_API_PREFIX)
+app.include_router(reviews.router, prefix=_API_PREFIX)
+app.include_router(wishlist.router, prefix=_API_PREFIX)
+app.include_router(notifications.router, prefix=_API_PREFIX)
+app.include_router(chat.router, prefix=_API_PREFIX)
 
 
 # ── Health check ────────────────────────────────────────────────────────────

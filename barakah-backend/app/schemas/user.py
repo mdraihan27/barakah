@@ -19,6 +19,7 @@ class SignupRequest(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=50, examples=["Doe"])
     email: EmailStr = Field(..., examples=["john@example.com"])
     password: str = Field(..., min_length=8, max_length=128, examples=["Str0ng!Pass"])
+    is_shop_owner: bool = Field(False, description="Set to true to register as a shop owner")
 
 
 class LoginRequest(BaseModel):
@@ -63,6 +64,7 @@ class UserResponse(BaseModel):
     is_email_verified: bool = False
     is_active: bool = True
     auth_provider: str = "local"
+    role: str = "user"
     avatar_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime

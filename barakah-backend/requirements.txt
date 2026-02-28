@@ -9,7 +9,7 @@ pymongo
 # Authentication
 python-jose[cryptography]
 passlib[bcrypt]
-bcrypt
+bcrypt==4.0.1
 
 # Google OAuth
 httpx
@@ -23,5 +23,13 @@ pydantic[email]
 pydantic-settings
 email-validator
 
+# WebSocket
+websockets
+
 # Utilities
 python-dotenv
+
+# Testing
+pytest
+pytest-asyncio
+httpx

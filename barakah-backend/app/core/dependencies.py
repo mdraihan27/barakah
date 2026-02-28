@@ -67,3 +67,28 @@ async def get_current_user(
         )
 
     return user
+
+
+def require_role(*allowed_roles: str):
+    """
+    Dependency factory — returns a Depends() that enforces user role.
+
+    Usage in a route:
+        current_user = Depends(require_role("shop_owner"))
+        current_user = Depends(require_role("shop_owner", "admin"))
+    """
+
+    async def _check_role(current_user: dict = Depends(get_current_user)):
+        user_role = current_user.get("role", "user")
+        if user_role not in allowed_roles:
+            logger.warning(
+                "Role denied: user %s has role '%s', needs one of %s",
+                current_user["_id"], user_role, allowed_roles,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"This action requires one of these roles: {', '.join(allowed_roles)}.",
+            )
+        return current_user
+
+    return _check_role

@@ -53,6 +53,7 @@ async def signup(body: SignupRequest, service: AuthService = Depends(_auth_servi
         last_name=body.last_name,
         email=body.email,
         password=body.password,
+        is_shop_owner=body.is_shop_owner,
     )
     return AuthResponse(
         user=UserResponse(**result["user"]),
