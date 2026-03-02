@@ -36,7 +36,8 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     GOOGLE_REDIRECT_URI: str = "http://localhost:8000/api/v1/auth/google/callback"
-
+    REDIRECT_DASHBOARD_URL: str = "http://localhost:3000/dashboard"
+    REDIRECT_LOGIN_URL: str = "http://localhost:3000/login"
     # ── SMTP / Email ─────────────────────────────────────────────────────
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587

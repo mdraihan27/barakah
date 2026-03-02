@@ -5,7 +5,9 @@ and shapes the response.
 """
 
 from fastapi import APIRouter, Depends, Query, status
+from fastapi.responses import RedirectResponse
 
+from app.core.config import get_settings
 from app.core.dependencies import get_current_user, get_db
 from app.core.logging import get_logger
 from app.repositories.user_repository import UserRepository
@@ -167,7 +169,6 @@ async def google_auth():
 
 @router.get(
     "/google/callback",
-    response_model=AuthResponse,
     summary="Google OAuth callback",
 )
 async def google_callback(
@@ -176,15 +177,26 @@ async def google_callback(
 ):
     """
     Called by Google after user consent.
-    Exchanges the code for profile info and creates / updates the user.
+    Exchanges the code for profile info, creates / updates the user,
+    then redirects to the dashboard (or login on failure).
     """
+    settings = get_settings()
     logger.info("GET /auth/google/callback")
-    google_user = await exchange_google_code(code)
-    result = await service.google_authenticate(google_user)
-    return AuthResponse(
-        user=UserResponse(**result["user"]),
-        tokens=TokenResponse(**result["tokens"]),
-    )
+    try:
+        google_user = await exchange_google_code(code)
+        result = await service.google_authenticate(google_user)
+        tokens = result["tokens"]
+        # Pass tokens as query params so the frontend can pick them up
+        redirect_url = (
+            f"{settings.REDIRECT_DASHBOARD_URL}"
+            f"?access_token={tokens['access_token']}"
+            f"&refresh_token={tokens['refresh_token']}"
+        )
+        logger.info("Google auth successful — redirecting to dashboard")
+        return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Google auth failed — redirecting to login: %s", exc)
+        return RedirectResponse(url=settings.REDIRECT_LOGIN_URL, status_code=status.HTTP_302_FOUND)
 
 
 # =============================================================================
