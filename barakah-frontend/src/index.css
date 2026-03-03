@@ -44,6 +44,17 @@
   font-style: normal;
 }
 
+/* ── Native <select> option popup theming ── */
+/* Works in Firefox; Chrome/Windows inherits from select's background-color */
+select option {
+  background-color: #f5f2eb;
+  color: #0f2318;
+}
+.dark select option {
+  background-color: #0d1a10;
+  color: #ffffff;
+}
+
 body {
   margin: 0;
   font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

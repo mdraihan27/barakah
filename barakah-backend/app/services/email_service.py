@@ -30,6 +30,14 @@ async def _send_email(to_email: str, subject: str, html_body: str) -> bool:
     message["Subject"] = subject
     message.attach(MIMEText(html_body, "html"))
 
+    if not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
+        logger.error(
+            "Email NOT sent to %s — SMTP_USERNAME/SMTP_PASSWORD are not configured. "
+            "Set them in your .env file.",
+            to_email,
+        )
+        return False
+
     try:
         await aiosmtplib.send(
             message,

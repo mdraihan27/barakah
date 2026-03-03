@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     # ── CORS ─────────────────────────────────────────────────────────────
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
+    # ── Uploads ──────────────────────────────────────────────────────────
+    UPLOAD_DIR: str = "uploads"
+    MAX_IMAGE_SIZE_MB: int = 5
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

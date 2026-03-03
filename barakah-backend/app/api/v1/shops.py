@@ -3,7 +3,7 @@ Shop routes — all /api/v1/shops/* endpoints.
 Thin controller layer: validates input, delegates to ShopService.
 """
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
 
 from app.core.dependencies import get_current_user, get_db, require_role
 from app.core.logging import get_logger
@@ -12,9 +12,9 @@ from app.schemas.shop import (
     ShopCreateRequest,
     ShopListResponse,
     ShopResponse,
-    ShopUpdateRequest,
 )
 from app.services.shop_service import ShopService
+from app.utils.file_upload import save_image
 
 logger = get_logger(__name__)
 
@@ -62,17 +62,59 @@ async def create_shop(
 )
 async def update_shop(
     shop_id: str,
-    body: ShopUpdateRequest,
+    request: Request,
+    name: str | None = Form(None),
+    description: str | None = Form(None),
+    category: str | None = Form(None),
+    is_active: bool | None = Form(None),
+    latitude: float | None = Form(None),
+    longitude: float | None = Form(None),
+    address_street: str | None = Form(None),
+    address_city: str | None = Form(None),
+    address_state: str | None = Form(None),
+    address_country: str | None = Form(None),
+    address_postal_code: str | None = Form(None),
+    image: UploadFile | None = File(None),
     current_user: dict = Depends(require_role("shop_owner", "admin")),
     service: ShopService = Depends(_shop_service),
 ):
     """Update shop details. Only the shop owner or an admin can modify."""
     logger.info("PATCH /shops/%s — user %s", shop_id, current_user["_id"])
-    shop = await service.update_shop(
-        shop_id=shop_id,
-        owner=current_user,
-        data=body.model_dump(exclude_unset=True),
-    )
+    payload = {}
+    if name is not None:
+        payload["name"] = name
+    if description is not None:
+        payload["description"] = description
+    if category is not None:
+        payload["category"] = category
+    if is_active is not None:
+        payload["is_active"] = is_active
+
+    if latitude is not None and longitude is not None:
+        payload["location"] = {
+            "type": "Point",
+            "coordinates": [longitude, latitude],
+        }
+
+    address = {}
+    if address_street is not None:
+        address["street"] = address_street
+    if address_city is not None:
+        address["city"] = address_city
+    if address_state is not None:
+        address["state"] = address_state
+    if address_country is not None:
+        address["country"] = address_country
+    if address_postal_code is not None:
+        address["postal_code"] = address_postal_code
+    if address:
+        payload["address"] = address
+
+    if image is not None:
+        relative_path = await save_image(image, "shops")
+        payload["image_url"] = str(request.base_url).rstrip("/") + relative_path
+
+    shop = await service.update_shop(shop_id=shop_id, owner=current_user, data=payload)
     return ShopResponse(**shop)
 
 

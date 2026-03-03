@@ -1,10 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import 'leaflet/dist/leaflet.css';
 import './index.css';
 import AppRoutes from './AppRoutes';
 import { ThemeProvider } from './ThemeContext';
 import { LanguageProvider } from './LanguageContext';
+import { AuthProvider } from './context/AuthContext';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -13,7 +16,20 @@ root.render(
     <ThemeProvider>
       <LanguageProvider>
         <BrowserRouter>
-          <AppRoutes />
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3500,
+                style: {
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  padding: '12px 16px',
+                },
+              }}
+            />
+          </AuthProvider>
         </BrowserRouter>
       </LanguageProvider>
     </ThemeProvider>

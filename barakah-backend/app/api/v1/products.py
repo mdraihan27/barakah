@@ -3,7 +3,7 @@ Product routes — all /api/v1/products/* endpoints.
 Thin controller layer: validates input, delegates to ProductService.
 """
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, status
 
 from app.core.dependencies import get_db, require_role
 from app.core.logging import get_logger
@@ -15,9 +15,9 @@ from app.schemas.product import (
     ProductPriceHistoryResponse,
     ProductPriceUpdateRequest,
     ProductResponse,
-    ProductUpdateRequest,
 )
 from app.services.product_service import ProductService
+from app.utils.file_upload import save_image
 
 logger = get_logger(__name__)
 
@@ -62,17 +62,35 @@ async def create_product(
 )
 async def update_product(
     product_id: str,
-    body: ProductUpdateRequest,
+    request: Request,
+    name: str | None = Form(None),
+    description: str | None = Form(None),
+    category: str | None = Form(None),
+    stock_quantity: int | None = Form(None),
+    images: list[UploadFile] | None = File(None),
     current_user: dict = Depends(require_role("shop_owner", "admin")),
     service: ProductService = Depends(_product_service),
 ):
     """Update product details. Only the shop owner or admin can modify."""
     logger.info("PATCH /products/%s — user %s", product_id, current_user["_id"])
-    product = await service.update_product(
-        product_id=product_id,
-        user=current_user,
-        data=body.model_dump(exclude_unset=True),
-    )
+    payload = {}
+    if name is not None:
+        payload["name"] = name
+    if description is not None:
+        payload["description"] = description
+    if category is not None:
+        payload["category"] = category
+    if stock_quantity is not None:
+        payload["stock_quantity"] = stock_quantity
+
+    if images:
+        uploaded_urls = []
+        for image in images:
+            relative_path = await save_image(image, "products")
+            uploaded_urls.append(str(request.base_url).rstrip("/") + relative_path)
+        payload["images"] = uploaded_urls
+
+    product = await service.update_product(product_id=product_id, user=current_user, data=payload)
     return ProductResponse(**product)
 
 

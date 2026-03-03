@@ -60,6 +60,15 @@ class AuthService:
             }
         )
 
+        # Auto-send verification email for local accounts
+        code = generate_verification_code()
+        expires_at = datetime.now(timezone.utc) + timedelta(
+            minutes=self.settings.VERIFICATION_CODE_EXPIRE_MINUTES
+        )
+        await self.user_repo.set_verification_code(user["_id"], code, expires_at)
+        await send_verification_email(email, code, user["first_name"])
+        logger.info("Verification email sent on signup: %s", email)
+
         tokens = create_token_pair(user["_id"])
         logger.info("Signup successful: %s", email)
         return {"user": user, "tokens": tokens}
@@ -131,6 +140,21 @@ class AuthService:
         expires_at = datetime.now(timezone.utc) + timedelta(
             minutes=self.settings.VERIFICATION_CODE_EXPIRE_MINUTES
         )
+
+        # Reuse the existing code if it is still valid, so a second call to
+        # this endpoint (e.g. after auto-send on signup) doesn't silently
+        # overwrite what was just emailed.
+        existing_code = user.get("verification_code")
+        existing_expiry = user.get("verification_code_expires_at")
+        if existing_code and existing_expiry:
+            exp = existing_expiry
+            if exp.tzinfo is None:
+                exp = exp.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) < exp:
+                code = existing_code
+                expires_at = exp
+                logger.debug("Reusing existing valid verification code for: %s", email)
+
         await self.user_repo.set_verification_code(user["_id"], code, expires_at)
 
         # Fire-and-forget email (logged on failure inside the service)
@@ -263,15 +287,23 @@ class AuthService:
         Raises HTTPException on mismatch or expiry.
         """
         if not stored_code or stored_code != submitted_code:
-            logger.warning("%s code mismatch or missing", label)
+            logger.warning(
+                "%s code mismatch — stored: %r, submitted: %r",
+                label, stored_code, submitted_code,
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Invalid {label.lower()} code.",
             )
 
-        if expires_at and datetime.now(timezone.utc) > expires_at:
-            logger.warning("%s code expired", label)
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"{label} code has expired. Please request a new one.",
-            )
+        # Normalise expires_at to UTC-aware so comparison never raises TypeError
+        now = datetime.now(timezone.utc)
+        if expires_at is not None:
+            if expires_at.tzinfo is None:
+                expires_at = expires_at.replace(tzinfo=timezone.utc)
+            if now > expires_at:
+                logger.warning("%s code expired (expired_at=%s, now=%s)", label, expires_at, now)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"{label} code has expired. Please request a new one.",
+                )

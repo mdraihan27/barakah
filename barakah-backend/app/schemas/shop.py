@@ -60,6 +60,7 @@ class ShopCreateRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, examples=["Barakah Grocery"])
     description: str = Field("", max_length=1000, examples=["Fresh halal groceries"])
     category: str = Field(..., min_length=2, max_length=50, examples=["grocery"])
+    image_url: str = Field("", max_length=2048, examples=["http://localhost:8000/uploads/shops/shop.jpg"])
     location: LocationSchema
     address: AddressSchema = Field(default_factory=AddressSchema)
 
@@ -69,6 +70,7 @@ class ShopUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     description: Optional[str] = Field(None, max_length=1000)
     category: Optional[str] = Field(None, min_length=2, max_length=50)
+    image_url: Optional[str] = Field(None, max_length=2048)
     location: Optional[LocationSchema] = None
     address: Optional[AddressSchema] = None
     is_active: Optional[bool] = None
@@ -85,6 +87,7 @@ class ShopResponse(BaseModel):
     name: str
     description: str = ""
     category: str
+    image_url: str = ""
     location: LocationSchema
     address: AddressSchema = Field(default_factory=AddressSchema)
     rating_average: float = 0.0

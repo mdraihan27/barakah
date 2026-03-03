@@ -41,6 +41,7 @@ class ShopService:
             "name": data["name"],
             "description": data.get("description", ""),
             "category": data["category"],
+            "image_url": data.get("image_url", ""),
             "location": location,
             "address": address,
         }
