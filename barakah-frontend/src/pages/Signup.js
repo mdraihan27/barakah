@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -49,16 +49,23 @@ function RoleCard({ selected, title, desc, icon, onClick }) {
 
 export default function Signup() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { isBangla } = useLanguage();
   const { signup } = useAuth();
   const t = useMemo(() => (isBangla ? T.bn : T.en), [isBangla]);
+
+  const initialRole = (() => {
+    const q = (searchParams.get('role') || '').toLowerCase();
+    if (q === 'owner' || q === 'shop_owner' || q === 'seller') return 'owner';
+    return 'consumer';
+  })();
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [password2, setPassword2] = useState('');
-  const [role, setRole] = useState('consumer');
+  const [role, setRole] = useState(initialRole);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {

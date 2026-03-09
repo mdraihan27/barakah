@@ -88,7 +88,7 @@ function App() {
             { href: '#community', label: t.navCommunity, hideOnMobile: true },
             { to: '/login', label: t.navLogin, hideOnMobile: true },
           ]}
-          cta={{ href: '#join', label: t.navCta }}
+          cta={{ to: '/signup', label: t.navCta }}
         />
 
         {/* hero content */}
@@ -118,15 +118,15 @@ function App() {
             </p>
 
             <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
-              <a href="#paths"
+              <Link to="/signup?role=owner"
                 className="group relative overflow-hidden rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500 px-8 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all hover:shadow-emerald-500/20">
                 <span className="relative z-10">{t.heroCta1}</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-0 transition-opacity group-hover:opacity-100" />
-              </a>
-              <a href="#paths"
+              </Link>
+              <Link to="/signup?role=consumer"
                 className="rounded-full border border-stone-300 dark:border-white/10 px-8 py-3.5 text-[14px] font-medium text-body backdrop-blur transition hover:border-emerald-600 dark:hover:border-emerald-400/25 hover:text-emerald-700 dark:hover:text-emerald-200">
                 {t.heroCta2}
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -274,9 +274,9 @@ function App() {
                     </div>
                   </div>
 
-                  <button className="mt-4 w-full rounded-xl bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-400/[0.15] py-2.5 text-[12px] font-medium text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-100 dark:hover:bg-emerald-500/[0.15]">
+                  <Link to="/signup?role=consumer" className="mt-4 block w-full rounded-xl bg-emerald-50 dark:bg-emerald-500/[0.08] border border-emerald-200 dark:border-emerald-400/[0.15] py-2.5 text-center text-[12px] font-medium text-emerald-700 dark:text-emerald-300 transition hover:bg-emerald-100 dark:hover:bg-emerald-500/[0.15]">
                     {t.viewAlerts}
-                  </button>
+                  </Link>
                 </div>
 
                 <IslamicStar className="absolute -top-3 -right-3 w-6 h-6 text-gold/20" />
@@ -425,14 +425,14 @@ function App() {
 
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <Link
-              to="/signup"
+              to="/signup?role=owner"
               className="group relative overflow-hidden rounded-full bg-gradient-to-r from-emerald-600 to-emerald-500 px-8 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all hover:shadow-emerald-500/20"
             >
               <span className="relative z-10">{t.ctaBtn1}</span>
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-emerald-400 opacity-0 transition-opacity group-hover:opacity-100" />
             </Link>
             <Link
-              to="/login"
+              to="/signup?role=consumer"
               className="rounded-full border border-gold/30 px-8 py-3.5 text-[14px] font-medium text-gold transition hover:border-gold/60"
             >
               {t.ctaBtn2}

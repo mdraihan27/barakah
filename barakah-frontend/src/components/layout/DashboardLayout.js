@@ -219,6 +219,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <PageShell>
+      <div className="dashboard-font min-h-screen">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
@@ -274,6 +275,7 @@ export default function DashboardLayout({ children }) {
             {children}
           </main>
         </div>
+      </div>
       </div>
     </PageShell>
   );
