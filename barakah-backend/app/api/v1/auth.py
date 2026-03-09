@@ -157,14 +157,13 @@ async def reset_password(
 
 @router.get(
     "/google",
-    response_model=MessageResponse,
     summary="Get Google OAuth URL",
 )
 async def google_auth():
-    """Return the Google consent-screen URL for the frontend to redirect to."""
+    """Redirect directly to the Google consent screen URL."""
     logger.info("GET /auth/google")
     url = await get_google_auth_url()
-    return MessageResponse(message=url)
+    return RedirectResponse(url=url, status_code=status.HTTP_302_FOUND)
 
 
 @router.get(

@@ -4,6 +4,7 @@ Uses httpx for async HTTP calls to Google APIs.
 """
 
 import httpx
+from urllib.parse import urlencode
 from fastapi import HTTPException, status
 
 from app.core.config import get_settings
@@ -27,7 +28,7 @@ async def get_google_auth_url() -> str:
         "access_type": "offline",
         "prompt": "consent",
     }
-    query = "&".join(f"{k}={v}" for k, v in params.items())
+    query = urlencode(params)
     url = f"https://accounts.google.com/o/oauth2/v2/auth?{query}"
     logger.debug("Generated Google auth URL")
     return url

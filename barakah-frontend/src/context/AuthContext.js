@@ -3,13 +3,25 @@ import { authAPI } from '../api/auth';
 
 const AuthContext = createContext(null);
 
+function readGoogleTokensFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+  if (accessToken && refreshToken) {
+    return { access_token: accessToken, refresh_token: refreshToken };
+  }
+  return null;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() =>
     JSON.parse(localStorage.getItem('barakah-user') || 'null')
   );
-  const [tokens, setTokens] = useState(() =>
-    JSON.parse(localStorage.getItem('barakah-tokens') || 'null')
-  );
+  const [tokens, setTokens] = useState(() => {
+    const localTokens = JSON.parse(localStorage.getItem('barakah-tokens') || 'null');
+    if (localTokens?.access_token) return localTokens;
+    return readGoogleTokensFromUrl();
+  });
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!tokens?.access_token;
@@ -26,7 +38,16 @@ export function AuthProvider({ children }) {
     else localStorage.removeItem('barakah-user');
   }, [user]);
 
-  /* ── Hydrate user on mount ── */
+  /* ── Remove OAuth tokens from URL bar after capture ── */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('access_token') && params.get('refresh_token')) {
+      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }, []);
+
+  /* ── Hydrate user when token changes ── */
   useEffect(() => {
     const hydrate = async () => {
       if (!tokens?.access_token) {
@@ -45,8 +66,7 @@ export function AuthProvider({ children }) {
       }
     };
     hydrate();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [tokens?.access_token]);
 
   const login = useCallback(async (email, password) => {
     const res = await authAPI.login({ email, password });
