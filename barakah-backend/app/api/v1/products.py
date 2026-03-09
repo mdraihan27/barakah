@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, 
 from app.core.dependencies import get_db, require_role
 from app.core.logging import get_logger
 from app.repositories.product_repository import ProductRepository
+from app.repositories.notification_repository import NotificationRepository
 from app.repositories.shop_repository import ShopRepository
 from app.schemas.product import (
     ProductCreateRequest,
@@ -17,6 +18,7 @@ from app.schemas.product import (
     ProductResponse,
 )
 from app.services.product_service import ProductService
+from app.services.notification_service import NotificationService
 from app.utils.file_upload import save_image
 
 logger = get_logger(__name__)
@@ -27,7 +29,8 @@ router = APIRouter(prefix="/products", tags=["Products"])
 # ── Helper to build service from DI ─────────────────────────────────────────
 
 def _product_service(db=Depends(get_db)) -> ProductService:
-    return ProductService(ProductRepository(db), ShopRepository(db))
+    notification_service = NotificationService(NotificationRepository(db))
+    return ProductService(ProductRepository(db), ShopRepository(db), notification_service)
 
 
 # =============================================================================

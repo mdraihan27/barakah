@@ -3,14 +3,48 @@ Notification service — business logic for user notifications.
 Provides a reusable `notify_user` method for other services (reviews, price monitor, etc.).
 """
 
-from typing import Optional
+import json
+from typing import Dict, List, Optional
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, WebSocket, status
 
 from app.core.logging import get_logger
 from app.repositories.notification_repository import NotificationRepository
 
 logger = get_logger(__name__)
+
+
+class NotificationConnectionManager:
+    """Tracks active notification websocket connections per user."""
+
+    def __init__(self):
+        self._user_connections: Dict[str, List[WebSocket]] = {}
+
+    async def connect(self, user_id: str, ws: WebSocket) -> None:
+        await ws.accept()
+        self._user_connections.setdefault(user_id, []).append(ws)
+
+    def disconnect(self, user_id: str, ws: WebSocket) -> None:
+        conns = self._user_connections.get(user_id, [])
+        if ws in conns:
+            conns.remove(ws)
+        if not conns:
+            self._user_connections.pop(user_id, None)
+
+    async def send_user_event(self, user_id: str, event: dict) -> None:
+        conns = self._user_connections.get(user_id, [])
+        dead: List[WebSocket] = []
+        for ws in conns:
+            try:
+                await ws.send_text(json.dumps(event, default=str))
+            except Exception:
+                dead.append(ws)
+
+        for ws in dead:
+            self.disconnect(user_id, ws)
+
+
+notification_connection_manager = NotificationConnectionManager()
 
 
 class NotificationService:
@@ -40,7 +74,19 @@ class NotificationService:
             "message": message,
             "payload": payload or {},
         }
-        return await self.notification_repo.create(doc)
+        created = await self.notification_repo.create(doc)
+        unread_count = await self.notification_repo.count_unread(user_id)
+        await notification_connection_manager.send_user_event(
+            user_id,
+            {
+                "type": "notification.new",
+                "payload": {
+                    "notification": created,
+                    "unread_count": unread_count,
+                },
+            },
+        )
+        return created
 
     # ── Read ─────────────────────────────────────────────────────────────
 
@@ -68,10 +114,29 @@ class NotificationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Notification not found or already read.",
             )
+        unread_count = await self.notification_repo.count_unread(user_id)
+        await notification_connection_manager.send_user_event(
+            user_id,
+            {
+                "type": "notification.unread",
+                "payload": {
+                    "unread_count": unread_count,
+                },
+            },
+        )
         logger.info("Notification %s marked as read by user %s", notification_id, user_id)
 
     async def mark_all_as_read(self, user_id: str) -> int:
         """Mark all notifications as read for a user. Returns count."""
         count = await self.notification_repo.mark_all_as_read(user_id)
+        await notification_connection_manager.send_user_event(
+            user_id,
+            {
+                "type": "notification.unread",
+                "payload": {
+                    "unread_count": 0,
+                },
+            },
+        )
         logger.info("Marked %d notifications as read for user %s", count, user_id)
         return count

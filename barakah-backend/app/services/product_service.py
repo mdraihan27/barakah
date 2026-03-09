@@ -6,6 +6,7 @@ Enforces shop ownership, stock validation, and price history tracking.
 from fastapi import HTTPException, status
 
 from app.core.logging import get_logger
+from app.services.notification_service import NotificationService
 from app.repositories.product_repository import ProductRepository
 from app.repositories.shop_repository import ShopRepository
 
@@ -15,9 +16,16 @@ logger = get_logger(__name__)
 class ProductService:
     """Business logic for product CRUD, pricing, and search."""
 
-    def __init__(self, product_repo: ProductRepository, shop_repo: ShopRepository):
+    def __init__(
+        self,
+        product_repo: ProductRepository,
+        shop_repo: ShopRepository,
+        notification_service: NotificationService,
+    ):
         self.product_repo = product_repo
         self.shop_repo = shop_repo
+        self.notification_service = notification_service
+        self._nearby_alert_radius_km = 10.0
 
     # ── Create ───────────────────────────────────────────────────────────
 
@@ -43,6 +51,10 @@ class ProductService:
 
         # Seed price history with initial price
         await self.product_repo.add_price_record(product["_id"], data["current_price"])
+
+        # Immediately alert nearby competing shop owners if this new listing is cheaper.
+        await self._notify_nearby_shops_for_lower_price(product)
+
         logger.info("Product '%s' created in shop %s", data["name"], shop_id)
         return product
 
@@ -86,7 +98,9 @@ class ProductService:
             product_id, product["current_price"], new_price,
         )
         await self.product_repo.add_price_record(product_id, new_price)
-        return await self.product_repo.find_by_id(product_id)
+        updated = await self.product_repo.find_by_id(product_id)
+        await self._notify_nearby_shops_for_lower_price(updated)
+        return updated
 
     # ── Read ─────────────────────────────────────────────────────────────
 
@@ -139,3 +153,77 @@ class ProductService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not own this shop.",
             )
+
+    async def _notify_nearby_shops_for_lower_price(self, source_product: dict) -> None:
+        """
+        Notify nearby shop owners (10km) when their matching product is priced higher
+        than the newly listed/updated product.
+        """
+        source_shop = await self.shop_repo.find_by_id(source_product["shop_id"])
+        if not source_shop or not source_shop.get("location"):
+            return
+
+        try:
+            source_lng, source_lat = source_shop["location"]["coordinates"]
+        except Exception:
+            return
+
+        nearby_shops = await self.shop_repo.find_nearby(
+            lng=source_lng,
+            lat=source_lat,
+            radius_km=self._nearby_alert_radius_km,
+        )
+
+        source_name = (source_product.get("name") or "").strip().lower()
+        if not source_name:
+            return
+
+        for nearby_shop in nearby_shops:
+            if nearby_shop["_id"] == source_shop["_id"]:
+                continue
+
+            nearby_products = await self.product_repo.find_by_shop(nearby_shop["_id"])
+            matching_products = []
+            for nearby_product in nearby_products:
+                candidate_name = (nearby_product.get("name") or "").strip().lower()
+                if candidate_name == source_name:
+                    matching_products.append(nearby_product)
+
+            if not matching_products:
+                continue
+
+            source_price = float(source_product.get("current_price") or 0)
+            if source_price <= 0:
+                continue
+
+            # Alert once per nearby shop using that shop's lowest matching price.
+            cheapest_match = min(
+                matching_products,
+                key=lambda p: float(p.get("current_price") or 0),
+            )
+            nearby_price = float(cheapest_match.get("current_price") or 0)
+            if nearby_price <= 0:
+                continue
+
+            if source_price < nearby_price:
+                await self.notification_service.create_notification(
+                    user_id=nearby_shop["owner_id"],
+                    notification_type="competitive_price",
+                    title="Lower price nearby",
+                    message=(
+                        f"A nearby shop ({source_shop.get('name', 'Unknown')}) is selling "
+                        f"'{source_product.get('name')}' for ৳{source_price:.2f}, "
+                        f"which is lower than your ৳{nearby_price:.2f}."
+                    ),
+                    payload={
+                        "product_name": source_product.get("name"),
+                        "your_shop_id": nearby_shop["_id"],
+                        "your_product_id": cheapest_match.get("_id"),
+                        "your_price": nearby_price,
+                        "competitor_shop_id": source_shop["_id"],
+                        "competitor_shop_name": source_shop.get("name"),
+                        "competitor_product_id": source_product.get("_id"),
+                        "competitor_price": source_price,
+                        "radius_km": self._nearby_alert_radius_km,
+                    },
+                )

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../../LanguageContext';
 import { notificationsAPI } from '../../../api/notifications';
+import { useNotification } from '../../../context/NotificationContext';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../../components/ui/Card';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
@@ -9,25 +10,58 @@ import EmptyState from '../../../components/common/EmptyState';
 
 export default function Notifications() {
   const { isBangla } = useLanguage();
+  const { unreadCount, setUnreadCount, eventTick, lastNotification } = useNotification();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const loadNotifications = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const res = await notificationsAPI.getNotifications(0, 100);
+      setNotifications(res.data.notifications || []);
+      setUnreadCount(res.data.unread_count || 0);
+    } catch {
+      setNotifications([]);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await notificationsAPI.getNotifications(0, 100);
-        setNotifications(res.data.notifications || res.data || []);
-      } catch { setNotifications([]); }
-      finally { setLoading(false); }
-    })();
+    loadNotifications(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (eventTick > 0) {
+      loadNotifications(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventTick]);
+
+  useEffect(() => {
+    if (!lastNotification) return;
+    setNotifications((prev) => {
+      const incomingId = lastNotification._id || lastNotification.id;
+      if (!incomingId) return prev;
+      if (prev.some((n) => (n._id || n.id) === incomingId)) return prev;
+      return [lastNotification, ...prev];
+    });
+  }, [lastNotification]);
 
   const handleMarkRead = async (notifId) => {
     try {
       await notificationsAPI.markAsRead(notifId);
-      setNotifications((prev) =>
-        prev.map((n) => ((n._id || n.id) === notifId ? { ...n, is_read: true } : n))
-      );
+      let nextUnread = unreadCount;
+      setNotifications((prev) => prev.map((n) => {
+        const isTarget = (n._id || n.id) === notifId;
+        if (isTarget && !n.is_read) {
+          nextUnread = Math.max(0, nextUnread - 1);
+          return { ...n, is_read: true };
+        }
+        return n;
+      }));
+      setUnreadCount(nextUnread);
     } catch { toast.error('Failed'); }
   };
 
@@ -35,11 +69,10 @@ export default function Notifications() {
     try {
       await notificationsAPI.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+      setUnreadCount(0);
       toast.success(isBangla ? 'সব পড়া হিসেবে চিহ্নিত' : 'All marked as read');
     } catch { toast.error('Failed'); }
   };
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const getIcon = (type) => {
     switch (type) {

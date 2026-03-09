@@ -3,14 +3,15 @@ Notification routes — /api/v1/notifications/* endpoints.
 All endpoints require authentication.
 """
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, WebSocket, WebSocketDisconnect, status
 
 from app.core.dependencies import get_current_user, get_db
 from app.core.logging import get_logger
 from app.repositories.notification_repository import NotificationRepository
 from app.schemas.notification import NotificationListResponse, NotificationResponse
 from app.schemas.user import MessageResponse
-from app.services.notification_service import NotificationService
+from app.services.notification_service import NotificationService, notification_connection_manager
+from app.utils.security import decode_access_token
 
 logger = get_logger(__name__)
 
@@ -87,3 +88,30 @@ async def mark_all_notifications_read(
     logger.info("POST /notifications/read-all — user %s", current_user["_id"])
     count = await service.mark_all_as_read(current_user["_id"])
     return MessageResponse(message=f"{count} notification(s) marked as read.")
+
+
+@router.websocket("/ws")
+async def websocket_notifications(
+    websocket: WebSocket,
+    token: str = Query(..., description="JWT access token"),
+):
+    """User-scoped notification channel for real-time unread updates."""
+    try:
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+    except Exception:
+        await websocket.close(code=4001, reason="Authentication failed")
+        return
+
+    await notification_connection_manager.connect(user_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        notification_connection_manager.disconnect(user_id, websocket)
+    except Exception as exc:
+        notification_connection_manager.disconnect(user_id, websocket)
+        logger.error("Notification websocket error: %s", exc)

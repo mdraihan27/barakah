@@ -9,6 +9,7 @@ import { ThemeProvider } from './ThemeContext';
 import { LanguageProvider } from './LanguageContext';
 import { AuthProvider } from './context/AuthContext';
 import { ChatProvider } from './context/ChatContext';
+import { NotificationProvider } from './context/NotificationContext';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -18,20 +19,22 @@ root.render(
       <LanguageProvider>
         <BrowserRouter>
           <AuthProvider>
-            <ChatProvider>
-              <AppRoutes />
-              <Toaster
-                position="top-right"
-                toastOptions={{
-                  duration: 3500,
-                  style: {
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    padding: '12px 16px',
-                  },
-                }}
-              />
-            </ChatProvider>
+            <NotificationProvider>
+              <ChatProvider>
+                <AppRoutes />
+                <Toaster
+                  position="top-right"
+                  toastOptions={{
+                    duration: 3500,
+                    style: {
+                      borderRadius: '12px',
+                      fontSize: '13px',
+                      padding: '12px 16px',
+                    },
+                  }}
+                />
+              </ChatProvider>
+            </NotificationProvider>
           </AuthProvider>
         </BrowserRouter>
       </LanguageProvider>
