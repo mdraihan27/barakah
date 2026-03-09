@@ -13,6 +13,7 @@ import StarRating from '../../../components/common/StarRating';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import EmptyState from '../../../components/common/EmptyState';
 import Modal from '../../../components/common/Modal';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 export default function PublicShopDetail() {
   const { id } = useParams();
@@ -57,7 +58,7 @@ export default function PublicShopDetail() {
       const res = await reviewsAPI.getShopReviews(id).catch(() => ({ data: { reviews: [] } }));
       setReviews(res.data.reviews || res.data || []);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed');
+      toast.error(getApiErrorMessage(err, 'Failed'));
     } finally { setReviewLoading(false); }
   };
 

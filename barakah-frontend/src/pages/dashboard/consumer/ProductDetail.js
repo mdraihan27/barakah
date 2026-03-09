@@ -8,6 +8,7 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../../components/ui/Card';
 import Badge from '../../../components/ui/Badge';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -19,6 +20,13 @@ export default function ProductDetail() {
   const [adding, setAdding] = useState(false);
   const [targetPrice, setTargetPrice] = useState('');
 
+  const normalizePriceHistory = (payload) => {
+    if (Array.isArray(payload?.history)) return payload.history;
+    if (Array.isArray(payload?.price_history)) return payload.price_history;
+    if (Array.isArray(payload)) return payload;
+    return [];
+  };
+
   useEffect(() => {
     (async () => {
       try {
@@ -27,7 +35,7 @@ export default function ProductDetail() {
           productsAPI.getPriceHistory(id).catch(() => ({ data: [] })),
         ]);
         setProduct(pRes.data);
-        setPriceHistory(phRes.data.price_history || phRes.data || []);
+        setPriceHistory(normalizePriceHistory(phRes.data));
       } catch {
         toast.error('Product not found');
         navigate(-1);
@@ -38,13 +46,14 @@ export default function ProductDetail() {
   const addToWishlist = async () => {
     setAdding(true);
     try {
+      const parsedTargetPrice = targetPrice !== '' ? parseFloat(targetPrice) : undefined;
       await wishlistAPI.addItem({
-        product_id: id,
-        target_price: targetPrice ? parseFloat(targetPrice) : undefined,
+        product_name: product?.name,
+        target_price: Number.isFinite(parsedTargetPrice) ? parsedTargetPrice : undefined,
       });
       toast.success(isBangla ? 'উইশলিস্টে যুক্ত হয়েছে!' : 'Added to wishlist!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed');
+      toast.error(getApiErrorMessage(err, 'Failed'));
     } finally { setAdding(false); }
   };
 
@@ -54,7 +63,8 @@ export default function ProductDetail() {
   const price = product.current_price ?? product.price ?? 0;
 
   // simple min/max/avg from history
-  const prices = priceHistory.map(h => h.price).filter(Boolean);
+  const safeHistory = Array.isArray(priceHistory) ? priceHistory : [];
+  const prices = safeHistory.map((h) => h?.price).filter((v) => typeof v === 'number');
   const minPrice = prices.length ? Math.min(...prices) : null;
   const maxPrice = prices.length ? Math.max(...prices) : null;
   const avgPrice = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length) : null;
@@ -152,7 +162,7 @@ export default function ProductDetail() {
               {/* price timeline */}
               <h4 className="text-[12px] font-medium text-muted mb-2">{isBangla ? 'ইতিহাস' : 'History'}</h4>
               <div className="space-y-1.5 max-h-[240px] overflow-y-auto custom-scrollbar">
-                {priceHistory.slice(0, 30).map((h, i) => (
+                {safeHistory.slice(0, 30).map((h, i) => (
                   <div key={i} className="flex items-center justify-between py-1.5 border-b border-stone-100 dark:border-white/[0.04] last:border-0">
                     <span className="text-[13px] font-medium text-heading">৳{h.price}</span>
                     <span className="text-[11px] text-muted">

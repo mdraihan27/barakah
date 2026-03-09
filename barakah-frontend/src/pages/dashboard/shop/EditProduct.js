@@ -7,6 +7,7 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../../components/ui/Card';
 import Select from '../../../components/ui/Select';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 const PRODUCT_CATEGORIES = ['Rice', 'Lentils', 'Oil', 'Spices', 'Flour', 'Sugar', 'Salt', 'Tea', 'Milk', 'Eggs', 'Vegetables', 'Fruits', 'Fish', 'Meat', 'Snacks', 'Beverages', 'Cleaning', 'Personal Care', 'Baby Products', 'Other'];
 
@@ -64,7 +65,7 @@ export default function EditProduct() {
       await productsAPI.updateProduct(productId, payload);
       toast.success(isBangla ? 'আপডেট হয়েছে!' : 'Product updated!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed');
+      toast.error(getApiErrorMessage(err, 'Failed'));
     } finally { setSaving(false); }
   };
 
@@ -80,7 +81,7 @@ export default function EditProduct() {
       const phRes = await productsAPI.getPriceHistory(productId).catch(() => ({ data: [] }));
       setPriceHistory(phRes.data.price_history || phRes.data || []);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed');
+      toast.error(getApiErrorMessage(err, 'Failed'));
     } finally { setUpdatingPrice(false); }
   };
 
