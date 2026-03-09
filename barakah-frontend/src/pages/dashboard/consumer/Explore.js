@@ -9,26 +9,103 @@ import Badge from '../../../components/ui/Badge';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import EmptyState from '../../../components/common/EmptyState';
 import NearbyShopsMap from '../../../components/common/NearbyShopsMap';
+import Modal from '../../../components/common/Modal';
+import LocationPicker from '../../../components/common/LocationPicker';
+
+const STORAGE_KEY = 'barakah-explore-location';
 
 export default function Explore() {
   const { isBangla } = useLanguage();
   const { lat, lng, loading: geoLoading, error: geoError } = useLocation();
   const [shops, setShops] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [radius, setRadius] = useState(10);
   const [view, setView] = useState('list'); // 'list' | 'map'
+  const [selectedLocation, setSelectedLocation] = useState({ lat: null, lng: null });
+  const [locationHydrated, setLocationHydrated] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [draftLocation, setDraftLocation] = useState({ lat: '', lng: '' });
+  const [manualGeoLoading, setManualGeoLoading] = useState(false);
 
   useEffect(() => {
-    if (!lat || !lng) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const savedLat = Number(parsed?.lat);
+        const savedLng = Number(parsed?.lng);
+        if (Number.isFinite(savedLat) && Number.isFinite(savedLng)) {
+          setSelectedLocation({ lat: savedLat, lng: savedLng });
+        }
+      }
+    } catch {
+      // ignore bad persisted location
+    } finally {
+      setLocationHydrated(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!locationHydrated) return;
+    if (selectedLocation.lat && selectedLocation.lng) return;
+    if (lat && lng) {
+      setSelectedLocation({ lat, lng });
+    }
+  }, [lat, lng, locationHydrated, selectedLocation.lat, selectedLocation.lng]);
+
+  const activeLat = selectedLocation.lat;
+  const activeLng = selectedLocation.lng;
+  const hasUserLocation = Number.isFinite(activeLat) && Number.isFinite(activeLng);
+
+  useEffect(() => {
+    if (!hasUserLocation) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       setLoading(true);
       try {
-        const res = await shopsAPI.getNearbyShops(lat, lng, radius);
+        const res = await shopsAPI.getNearbyShops(activeLat, activeLng, radius);
         setShops(res.data.shops || res.data || []);
       } catch { setShops([]); }
       finally { setLoading(false); }
     })();
-  }, [lat, lng, radius]);
+  }, [activeLat, activeLng, radius, hasUserLocation]);
+
+  const openLocationModal = () => {
+    setDraftLocation({
+      lat: activeLat ?? '',
+      lng: activeLng ?? '',
+    });
+    setShowLocationModal(true);
+  };
+
+  const handleSaveLocation = () => {
+    const parsedLat = Number(draftLocation.lat);
+    const parsedLng = Number(draftLocation.lng);
+    if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLng)) {
+      return;
+    }
+    const payload = { lat: parsedLat, lng: parsedLng };
+    setSelectedLocation(payload);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    setShowLocationModal(false);
+  };
+
+  const handleUseMyLocationInModal = () => {
+    if (!navigator.geolocation) return;
+    setManualGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setDraftLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setManualGeoLoading(false);
+      },
+      () => {
+        setManualGeoLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
+    );
+  };
 
   return (
     <DashboardLayout>
@@ -39,13 +116,28 @@ export default function Explore() {
               {isBangla ? 'কাছের দোকান' : 'Nearby Shops'}
             </h1>
             <p className="text-[13px] text-muted mt-0.5">
-              {geoLoading ? (isBangla ? 'লোকেশন খুঁজছে...' : 'Getting location...') :
-               geoError ? (isBangla ? 'লোকেশন পাওয়া যায়নি, ডিফল্ট ব্যবহার হচ্ছে' : 'Location unavailable, using default') :
-               (isBangla ? `আপনার ${radius} কিমি ব্যাসার্ধে` : `Within ${radius}km radius`)}
+              {geoLoading && !hasUserLocation
+                ? (isBangla ? 'লোকেশন খুঁজছে...' : 'Getting location...')
+                : geoError && !hasUserLocation
+                  ? (isBangla ? 'লোকেশন সেট করুন, তারপর দোকান দেখুন' : 'Set your location to explore nearby shops')
+                  : (isBangla ? `আপনার ${radius} কিমি ব্যাসার্ধে` : `Within ${radius}km radius`)}
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={openLocationModal}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-white/60 dark:bg-white/[0.02] border border-stone-200/70 dark:border-white/[0.08] text-body hover:border-emerald-300 dark:hover:border-emerald-500/20 transition"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              {hasUserLocation
+                ? (isBangla ? 'লোকেশন আপডেট' : 'Update Location')
+                : (isBangla ? 'লোকেশন যোগ করুন' : 'Add Location')}
+            </button>
+
             {/* radius selector */}
             <div className="flex items-center gap-2">
               <span className="text-[12px] text-muted">{isBangla ? 'ব্যাসার্ধ:' : 'Radius:'}</span>
@@ -100,8 +192,22 @@ export default function Explore() {
           {isBangla ? 'পণ্য অনুসন্ধান করুন...' : 'Search products across shops...'}
         </Link>
 
-        {loading || geoLoading ? (
+        {loading || (geoLoading && !hasUserLocation) ? (
           <LoadingSpinner size="lg" className="py-20" />
+        ) : !hasUserLocation ? (
+          <EmptyState
+            icon={<svg className="w-12 h-12 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>}
+            title={isBangla ? 'লোকেশন সেট করুন' : 'Set Your Location'}
+            description={isBangla ? 'প্রথমবার ব্যবহারের জন্য লোকেশন দিন বা ম্যাপে ট্যাপ করে ম্যানুয়ালি সেট করুন।' : 'Add your location for the first time, or set it manually by tapping on the map.'}
+            action={
+              <button
+                onClick={openLocationModal}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-2.5 text-[13px] font-semibold text-white"
+              >
+                {isBangla ? 'লোকেশন সেট করুন' : 'Set Location'}
+              </button>
+            }
+          />
         ) : shops.length === 0 ? (
           <EmptyState
             icon={<svg className="w-12 h-12 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>}
@@ -154,6 +260,48 @@ export default function Explore() {
             ))}
           </div>
         )}
+
+        <Modal
+          isOpen={showLocationModal}
+          onClose={() => setShowLocationModal(false)}
+          title={isBangla ? 'লোকেশন সেট / আপডেট' : 'Set / Update Location'}
+          size="md"
+        >
+          <div className="space-y-4">
+            <p className="text-[13px] text-muted">
+              {isBangla
+                ? 'ম্যাপে ক্লিক করে বা মার্কার টেনে লোকেশন ম্যানুয়ালি দিন। চাইলে "আমার লোকেশন" ব্যবহার করতে পারেন।'
+                : 'Set location manually by clicking on the map or dragging the marker. You can also use "my location".'}
+            </p>
+
+            <LocationPicker
+              lat={draftLocation.lat}
+              lng={draftLocation.lng}
+              onChange={setDraftLocation}
+              onUseMyLocation={handleUseMyLocationInModal}
+              geoLoading={manualGeoLoading}
+              isBangla={isBangla}
+            />
+
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowLocationModal(false)}
+                className="rounded-xl border border-stone-200/70 dark:border-white/[0.08] px-4 py-2 text-[13px] font-medium text-body"
+              >
+                {isBangla ? 'বাতিল' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveLocation}
+                disabled={!Number.isFinite(Number(draftLocation.lat)) || !Number.isFinite(Number(draftLocation.lng))}
+                className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-50"
+              >
+                {isBangla ? 'সংরক্ষণ করুন' : 'Save Location'}
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </DashboardLayout>
   );
