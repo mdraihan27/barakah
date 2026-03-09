@@ -4,7 +4,7 @@ Thin controller layer: validates input, delegates to AuthService,
 and shapes the response.
 """
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile, status
 from fastapi.responses import RedirectResponse
 
 from app.core.config import get_settings
@@ -25,6 +25,7 @@ from app.schemas.user import (
 )
 from app.services.auth_service import AuthService
 from app.services.google_service import exchange_google_code, get_google_auth_url
+from app.utils.file_upload import save_image
 
 logger = get_logger(__name__)
 
@@ -35,6 +36,13 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 def _auth_service(db=Depends(get_db)) -> AuthService:
     return AuthService(UserRepository(db))
+
+
+def _to_user_response(user: dict) -> UserResponse:
+    """Map DB user doc to API user response with Google-avatar fallback."""
+    user_doc = dict(user)
+    user_doc["avatar_url"] = user_doc.get("avatar_url") or user_doc.get("google_avatar_url")
+    return UserResponse(**user_doc)
 
 
 # =============================================================================
@@ -58,7 +66,7 @@ async def signup(body: SignupRequest, service: AuthService = Depends(_auth_servi
         is_shop_owner=body.is_shop_owner,
     )
     return AuthResponse(
-        user=UserResponse(**result["user"]),
+        user=_to_user_response(result["user"]),
         tokens=TokenResponse(**result["tokens"]),
     )
 
@@ -77,7 +85,7 @@ async def login(body: LoginRequest, service: AuthService = Depends(_auth_service
     logger.info("POST /auth/login — %s", body.email)
     result = await service.login(email=body.email, password=body.password)
     return AuthResponse(
-        user=UserResponse(**result["user"]),
+        user=_to_user_response(result["user"]),
         tokens=TokenResponse(**result["tokens"]),
     )
 
@@ -210,4 +218,23 @@ async def google_callback(
 async def get_me(current_user: dict = Depends(get_current_user)):
     """Return the authenticated user's profile."""
     logger.info("GET /auth/me — user %s", current_user["_id"])
-    return UserResponse(**current_user)
+    return _to_user_response(current_user)
+
+
+@router.patch(
+    "/me/avatar",
+    response_model=UserResponse,
+    summary="Update current user profile image",
+)
+async def update_my_avatar(
+    request: Request,
+    image: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user),
+    service: AuthService = Depends(_auth_service),
+):
+    """Upload and set a custom profile image for the authenticated user."""
+    logger.info("PATCH /auth/me/avatar — user %s", current_user["_id"])
+    relative_path = await save_image(image, "users")
+    avatar_url = str(request.base_url).rstrip("/") + relative_path
+    updated_user = await service.update_avatar(current_user["_id"], avatar_url)
+    return _to_user_response(updated_user)

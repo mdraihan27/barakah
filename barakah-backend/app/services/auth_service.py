@@ -248,7 +248,7 @@ class AuthService:
             await self.user_repo.update_by_id(
                 user["_id"],
                 {
-                    "avatar_url": google_user_info.get("picture"),
+                    "google_avatar_url": google_user_info.get("picture"),
                     "first_name": google_user_info.get("given_name", user["first_name"]),
                     "last_name": google_user_info.get("family_name", user["last_name"]),
                     "is_email_verified": True,  # Google guarantees email ownership
@@ -265,13 +265,23 @@ class AuthService:
                     "hashed_password": None,  # no password for Google-only accounts
                     "auth_provider": "google",
                     "is_email_verified": True,
-                    "avatar_url": google_user_info.get("picture"),
+                    "avatar_url": None,
+                    "google_avatar_url": google_user_info.get("picture"),
                 }
             )
 
         tokens = create_token_pair(user["_id"])
         logger.info("Google auth successful: %s", email)
         return {"user": user, "tokens": tokens}
+
+    async def update_avatar(self, user_id: str, avatar_url: str) -> dict:
+        """Set a user's custom avatar URL and return updated profile."""
+        user = await self.user_repo.find_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+        await self.user_repo.update_by_id(user_id, {"avatar_url": avatar_url})
+        return await self.user_repo.find_by_id(user_id)
 
     # ─── Internal helper ─────────────────────────────────────────────────
 

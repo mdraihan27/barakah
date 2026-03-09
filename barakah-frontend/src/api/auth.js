@@ -7,6 +7,13 @@ export const authAPI = {
   verifyEmail: (email, code) => API.post('/auth/verify-email', { email, code }),
   forgotPassword: (email) => API.post('/auth/forgot-password', { email }),
   resetPassword: (data) => API.post('/auth/reset-password', data),
+  uploadMyAvatar: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return API.patch('/auth/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
   getGoogleOAuthURL: () => API.get('/auth/google'),
   getMe: () => API.get('/auth/me'),
 };

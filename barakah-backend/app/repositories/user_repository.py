@@ -59,6 +59,7 @@ class UserRepository:
                 "auth_provider": user_data.get("auth_provider", "local"),
                 "role": user_data.get("role", "user"),
                 "avatar_url": user_data.get("avatar_url"),
+                "google_avatar_url": user_data.get("google_avatar_url"),
                 "verification_code": None,
                 "verification_code_expires_at": None,
                 "reset_code": None,

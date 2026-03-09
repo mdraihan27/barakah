@@ -9,7 +9,7 @@ import Avatar from '../../components/ui/Avatar';
 import Badge from '../../components/ui/Badge';
 
 export default function Profile() {
-  const { user, isShopOwner } = useAuth();
+  const { user, isShopOwner, refreshUser } = useAuth();
   const { isBangla } = useLanguage();
 
   const [changingPassword, setChangingPassword] = useState(false);
@@ -19,6 +19,25 @@ export default function Profile() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      await authAPI.uploadMyAvatar(file);
+      await refreshUser();
+      toast.success(isBangla ? 'প্রোফাইল ছবি আপডেট হয়েছে' : 'Profile image updated');
+    } catch (err) {
+      const msg = err.response?.data?.detail;
+      toast.error(typeof msg === 'string' ? msg : 'Failed to update profile image');
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
 
   const handleSendResetCode = async () => {
     setLoading(true);
@@ -69,7 +88,19 @@ export default function Profile() {
         <Card className="mb-6">
           <CardBody>
             <div className="flex items-center gap-5">
-              <Avatar name={fullName} src={user?.avatar_url} size="xl" />
+              <div className="flex flex-col items-center gap-2">
+                <Avatar name={fullName} src={user?.avatar_url} size="xl" />
+                <label className="text-[12px] font-medium text-emerald-700 dark:text-emerald-300 cursor-pointer hover:underline">
+                  {uploadingAvatar ? '...' : (isBangla ? 'ছবি আপলোড' : 'Upload Photo')}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    disabled={uploadingAvatar}
+                  />
+                </label>
+              </div>
               <div>
                 <h2 className="text-lg font-semibold text-heading">{fullName}</h2>
                 <p className="text-[13px] text-muted">{user?.email}</p>
