@@ -1,15 +1,18 @@
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../LanguageContext';
 import { authAPI } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 import { T } from '../translations';
 import SiteHeader from '../components/SiteHeader';
 import Footer from '../components/Footer';
 import PageShell from '../components/common/PageShell';
 
 export default function VerifyEmail() {
+  const navigate = useNavigate();
   const { isBangla } = useLanguage();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const t = useMemo(() => (isBangla ? T.bn : T.en), [isBangla]);
 
   const [params] = useSearchParams();
@@ -18,6 +21,12 @@ export default function VerifyEmail() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [verified, setVerified] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleVerify = async (e) => {
     e.preventDefault();

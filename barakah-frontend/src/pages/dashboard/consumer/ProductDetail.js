@@ -10,6 +10,8 @@ import Badge from '../../../components/ui/Badge';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { getApiErrorMessage } from '../../../utils/apiError';
 
+const EXPLORE_LOCATION_STORAGE_KEY = 'barakah-explore-location';
+
 export default function ProductDetail() {
   const { id } = useParams();
   const { isBangla } = useLanguage();
@@ -47,9 +49,33 @@ export default function ProductDetail() {
     setAdding(true);
     try {
       const parsedTargetPrice = targetPrice !== '' ? parseFloat(targetPrice) : undefined;
+      let userLat;
+      let userLng;
+
+      try {
+        const raw = localStorage.getItem(EXPLORE_LOCATION_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const lat = Number(parsed?.lat);
+          const lng = Number(parsed?.lng);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            userLat = lat;
+            userLng = lng;
+          }
+        }
+      } catch {
+        // Ignore malformed persisted location.
+      }
+
       await wishlistAPI.addItem({
         product_name: product?.name,
         target_price: Number.isFinite(parsedTargetPrice) ? parsedTargetPrice : undefined,
+        baseline_price: Number.isFinite(price) && price > 0 ? price : undefined,
+        source_product_id: product?._id || product?.id,
+        source_shop_id: product?.shop_id,
+        user_lat: userLat,
+        user_lng: userLng,
+        radius_km: 10,
       });
       toast.success(isBangla ? 'উইশলিস্টে যুক্ত হয়েছে!' : 'Added to wishlist!');
     } catch (err) {

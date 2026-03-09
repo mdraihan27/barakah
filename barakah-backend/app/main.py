@@ -19,6 +19,7 @@ from app.core.logging import get_logger, setup_logging
 from app.repositories.user_repository import UserRepository
 from app.repositories.shop_repository import ShopRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.product_catalog_repository import ProductCatalogRepository
 from app.repositories.review_repository import ReviewRepository
 from app.repositories.wishlist_repository import WishlistRepository
 from app.repositories.notification_repository import NotificationRepository
@@ -79,10 +80,12 @@ async def lifespan(app: FastAPI):
 
 async def _ensure_all_indexes(db) -> None:
     """Create indexes for every collection at startup."""
+    product_catalog_repo = ProductCatalogRepository(db)
     repos = [
         UserRepository(db),
         ShopRepository(db),
         ProductRepository(db),
+        product_catalog_repo,
         ReviewRepository(db),
         WishlistRepository(db),
         NotificationRepository(db),
@@ -90,6 +93,10 @@ async def _ensure_all_indexes(db) -> None:
     ]
     for repo in repos:
         await repo.ensure_indexes()
+
+    # Ensure category dropdown has initial global product names for new installs.
+    await product_catalog_repo.seed_default_catalog()
+
     logger.info("All collection indexes ensured.")
 
 

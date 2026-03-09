@@ -16,6 +16,7 @@ from app.schemas.user import (
     ForgotPasswordRequest,
     LoginRequest,
     MessageResponse,
+    RefreshTokenRequest,
     ResetPasswordRequest,
     SendVerificationCodeRequest,
     SignupRequest,
@@ -89,6 +90,21 @@ async def login(body: LoginRequest, service: AuthService = Depends(_auth_service
         user=_to_user_response(result["user"]),
         tokens=TokenResponse(**result["tokens"]),
     )
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenResponse,
+    summary="Refresh token pair",
+)
+async def refresh_tokens(
+    body: RefreshTokenRequest,
+    service: AuthService = Depends(_auth_service),
+):
+    """Exchange a valid refresh token for a new access+refresh token pair."""
+    logger.info("POST /auth/refresh")
+    tokens = await service.refresh_tokens(body.refresh_token)
+    return TokenResponse(**tokens)
 
 
 # =============================================================================

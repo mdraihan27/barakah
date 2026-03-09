@@ -18,6 +18,31 @@ function readGoogleNewUserFlagFromUrl() {
   return params.get('is_new_user') === '1';
 }
 
+function decodeJwtPayload(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split('.');
+  if (parts.length < 2) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const json = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`)
+        .join('')
+    );
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+function isJwtExpired(token, skewSeconds = 30) {
+  const payload = decodeJwtPayload(token);
+  if (!payload?.exp) return true;
+  const nowSec = Math.floor(Date.now() / 1000);
+  return payload.exp <= (nowSec + skewSeconds);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() =>
     JSON.parse(localStorage.getItem('barakah-user') || 'null')
@@ -29,7 +54,7 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(true);
 
-  const isAuthenticated = !!tokens?.access_token;
+  const isAuthenticated = !!user;
   const isShopOwner = user?.role === 'shop_owner';
 
   /* ── Persist to localStorage on change ── */
@@ -67,19 +92,49 @@ export function AuthProvider({ children }) {
         setLoading(false);
         return;
       }
-      try {
+
+      const accessToken = tokens.access_token;
+      const refreshToken = tokens.refresh_token;
+
+      const loadProfile = async () => {
         const res = await authAPI.getMe();
         setUser(res.data);
+      };
+
+      const refreshAndLoadProfile = async () => {
+        if (!refreshToken || isJwtExpired(refreshToken)) {
+          throw new Error('Refresh token expired');
+        }
+
+        const refreshRes = await authAPI.refresh(refreshToken);
+        setTokens(refreshRes.data);
+        localStorage.setItem('barakah-tokens', JSON.stringify(refreshRes.data));
+        const meRes = await authAPI.getMe();
+        setUser(meRes.data);
+      };
+
+      try {
+        if (!isJwtExpired(accessToken)) {
+          try {
+            await loadProfile();
+          } catch {
+            await refreshAndLoadProfile();
+          }
+        } else {
+          await refreshAndLoadProfile();
+        }
       } catch {
-        // token invalid
+        // Access + refresh invalid
         setTokens(null);
         setUser(null);
+        localStorage.removeItem('barakah-tokens');
+        localStorage.removeItem('barakah-user');
       } finally {
         setLoading(false);
       }
     };
     hydrate();
-  }, [tokens?.access_token]);
+  }, [tokens?.access_token, tokens?.refresh_token]);
 
   const login = useCallback(async (email, password) => {
     const res = await authAPI.login({ email, password });

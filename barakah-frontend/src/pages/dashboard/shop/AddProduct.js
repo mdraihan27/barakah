@@ -7,8 +7,7 @@ import { shopsAPI } from '../../../api/shops';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../../components/ui/Card';
 import Select from '../../../components/ui/Select';
-
-const PRODUCT_CATEGORIES = ['Rice', 'Lentils', 'Oil', 'Spices', 'Flour', 'Sugar', 'Salt', 'Tea', 'Milk', 'Eggs', 'Vegetables', 'Fruits', 'Fish', 'Meat', 'Snacks', 'Beverages', 'Cleaning', 'Personal Care', 'Baby Products', 'Other'];
+import { getApiErrorMessage } from '../../../utils/apiError';
 
 export default function AddProduct() {
   const { shopId } = useParams();
@@ -21,15 +20,41 @@ export default function AddProduct() {
   });
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [nameOptions, setNameOptions] = useState([]);
+  const [addingName, setAddingName] = useState(false);
+  const [newCatalogName, setNewCatalogName] = useState('');
 
   useEffect(() => {
     shopsAPI.getShop(shopId).then(r => setShopName(r.data.name)).catch(() => {});
+    productsAPI.getCatalogCategories()
+      .then((r) => setCategoryOptions(r.data?.categories || []))
+      .catch(() => setCategoryOptions([]));
   }, [shopId]);
+
+  useEffect(() => {
+    if (!form.category) {
+      setNameOptions([]);
+      setValue('name', '');
+      return;
+    }
+
+    productsAPI.getCatalogNames(form.category)
+      .then((r) => {
+        const names = r.data?.names || [];
+        setNameOptions(names);
+        if (form.name && !names.some((n) => n.toLowerCase() === form.name.toLowerCase())) {
+          setValue('name', '');
+        }
+      })
+      .catch(() => setNameOptions([]));
+  }, [form.category]);
 
   const setValue = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.category) { toast.error(isBangla ? 'ক্যাটাগরি নির্বাচন করুন' : 'Category required'); return; }
     if (!form.name.trim()) { toast.error(isBangla ? 'পণ্যের নাম দিন' : 'Product name required'); return; }
     if (!form.price || parseFloat(form.price) <= 0) { toast.error(isBangla ? 'মূল্য দিন' : 'Price required'); return; }
 
@@ -44,7 +69,7 @@ export default function AddProduct() {
       await productsAPI.createProduct({
         shop_id: shopId,
         name: form.name.trim(),
-        category: form.category || undefined,
+        category: form.category,
         description: form.description.trim() || undefined,
         images: imageUrls,
         current_price: parseFloat(form.price),
@@ -56,6 +81,35 @@ export default function AddProduct() {
       const msg = err.response?.data?.detail;
       toast.error(typeof msg === 'string' ? msg : 'Failed');
     } finally { setLoading(false); }
+  };
+
+  const handleAddCatalogName = async () => {
+    const value = newCatalogName.trim();
+    if (!form.category) {
+      toast.error(isBangla ? 'আগে ক্যাটাগরি দিন' : 'Select category first');
+      return;
+    }
+    if (value.length < 2) {
+      toast.error(isBangla ? 'নাম কমপক্ষে ২ অক্ষর' : 'Name must be at least 2 characters');
+      return;
+    }
+
+    setAddingName(true);
+    try {
+      const res = await productsAPI.addCatalogName({
+        category: form.category,
+        name: value,
+      });
+      const names = res.data?.names || [];
+      setNameOptions(names);
+      setValue('name', value);
+      setNewCatalogName('');
+      toast.success(isBangla ? 'নাম যোগ হয়েছে' : 'Product name added');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to add product name'));
+    } finally {
+      setAddingName(false);
+    }
   };
 
   const fieldCls = "w-full rounded-xl bg-white/80 dark:bg-white/[0.04] border border-stone-200/70 dark:border-white/[0.08] px-4 py-2.5 text-[14px] text-heading dark:text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-emerald-500/30";
@@ -71,19 +125,54 @@ export default function AddProduct() {
         <Card>
           <CardBody>
             <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'পণ্যের নাম' : 'Product Name'} *</label>
-                <input value={form.name} onChange={(e) => setValue('name', e.target.value)} className={fieldCls} placeholder={isBangla ? 'যেমন: মিনিকেট চাল' : 'e.g. Miniket Rice'} required />
-              </div>
-
               <Select
                 label={isBangla ? 'ক্যাটাগরি' : 'Category'}
                 value={form.category}
-                onChange={(e) => setValue('category', e.target.value)}
+                onChange={(e) => {
+                  setValue('category', e.target.value);
+                  setValue('name', '');
+                }}
               >
                 <option value="">—</option>
-                {PRODUCT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
+
+              <Select
+                label={isBangla ? 'পণ্যের নাম' : 'Product Name'}
+                value={form.name}
+                onChange={(e) => setValue('name', e.target.value)}
+                required
+                disabled={!form.category}
+              >
+                <option value="">{isBangla ? 'তালিকা থেকে নির্বাচন করুন' : 'Select from list'}</option>
+                {nameOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+              </Select>
+              <p className="-mt-1 text-[14px] text-muted">
+                {isBangla
+                  ? 'অথবা'
+                  : 'Or'}
+              </p>
+
+              <div>
+                <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'নতুন পণ্যের নাম যোগ করুন' : 'Add New Product Name'}</label>
+                <div className="flex gap-2">
+                  <input
+                    value={newCatalogName}
+                    onChange={(e) => setNewCatalogName(e.target.value)}
+                    className={fieldCls}
+                    placeholder={isBangla ? 'যেমন: কালোজিরা চাল' : 'e.g. Kalijira Rice'}
+                    disabled={!form.category}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCatalogName}
+                    disabled={addingName || !form.category || !newCatalogName.trim()}
+                    className="rounded-xl border border-stone-200/70 dark:border-white/[0.08] px-4 py-2.5 text-[12px] font-medium text-body hover:bg-stone-50 dark:hover:bg-white/[0.03] disabled:opacity-60"
+                  >
+                    {addingName ? '...' : (isBangla ? 'যোগ করুন' : 'Add')}
+                  </button>
+                </div>
+              </div>
 
               <div>
                 <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'মূল্য (৳)' : 'Price (৳)'} *</label>

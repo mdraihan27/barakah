@@ -38,6 +38,12 @@ class ProductPriceUpdateRequest(BaseModel):
     new_price: float = Field(..., gt=0, examples=[24.99])
 
 
+class ProductCatalogNameCreateRequest(BaseModel):
+    """Add a new product name to the global catalog for a category."""
+    category: str = Field(..., min_length=2, max_length=50, examples=["Rice"])
+    name: str = Field(..., min_length=2, max_length=200, examples=["Miniket Rice"])
+
+
 # =============================================================================
 # Response Schemas
 # =============================================================================
@@ -75,3 +81,14 @@ class ProductPriceHistoryResponse(BaseModel):
     """Price history for a specific product."""
     product_id: str
     history: List[PriceHistoryEntry]
+
+
+class ProductCatalogCategoriesResponse(BaseModel):
+    """Global product categories for product-name selection."""
+    categories: List[str]
+
+
+class ProductCatalogNamesResponse(BaseModel):
+    """Global product names under one category."""
+    category: str
+    names: List[str]

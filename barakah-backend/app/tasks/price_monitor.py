@@ -5,17 +5,15 @@ Uses asyncio tasks launched from FastAPI's lifespan.
 """
 
 import asyncio
-import re
-
-from bson import ObjectId
-
 from app.core.database import get_database
 from app.core.logging import get_logger
 from app.repositories.notification_repository import NotificationRepository
 from app.repositories.product_repository import ProductRepository
+from app.repositories.product_catalog_repository import ProductCatalogRepository
 from app.repositories.shop_repository import ShopRepository
 from app.repositories.wishlist_repository import WishlistRepository
 from app.services.notification_service import NotificationService
+from app.services.product_service import ProductService
 
 logger = get_logger(__name__)
 
@@ -114,59 +112,20 @@ async def _check_competitive_pricing() -> None:
 
 async def _check_wishlist_prices() -> None:
     """
-    For each wishlist item with a target_price:
-    - Find products matching the name
-    - If price ≤ target_price, notify the user
+    Periodic fallback for wishlist alerts.
+    Reuses the same location-aware drop-detection logic as realtime product events.
     """
     db = get_database()
-    wishlist_repo = WishlistRepository(db)
-    notification_svc = NotificationService(NotificationRepository(db))
+    product_svc = ProductService(
+        product_repo=ProductRepository(db),
+        product_catalog_repo=ProductCatalogRepository(db),
+        shop_repo=ShopRepository(db),
+        notification_service=NotificationService(NotificationRepository(db)),
+        wishlist_repo=WishlistRepository(db),
+    )
 
-    items = await wishlist_repo.find_all_with_target_price()
-    if not items:
-        logger.debug("No wishlist items with target prices — skipping")
-        return
-
-    logger.info("Wishlist price check: %d items to monitor", len(items))
-    alerts_sent = 0
-
-    for item in items:
-        # Find products matching the wishlist product name (case-insensitive)
-        escaped_name = re.escape(item["product_name"])
-        products_cursor = db["products"].find({
-            "name": {"$regex": f"^{escaped_name}$", "$options": "i"}
-        })
-
-        async for product in products_cursor:
-            product["_id"] = str(product["_id"])
-
-            if product["current_price"] <= item["target_price"]:
-                # Fetch shop name for the notification
-                shop = await db["shops"].find_one(
-                    {"_id": ObjectId(product["shop_id"])}
-                )
-                shop_name = shop["name"] if shop else "Unknown Shop"
-
-                await notification_svc.create_notification(
-                    user_id=item["user_id"],
-                    notification_type="wishlist_price_drop",
-                    title="Wishlist Price Alert!",
-                    message=(
-                        f"'{item['product_name']}' is now "
-                        f"${product['current_price']:.2f} at {shop_name} "
-                        f"(your target: ${item['target_price']:.2f})."
-                    ),
-                    payload={
-                        "wishlist_item_id": item["_id"],
-                        "product_id": product["_id"],
-                        "shop_id": product["shop_id"],
-                        "current_price": product["current_price"],
-                        "target_price": item["target_price"],
-                    },
-                )
-                alerts_sent += 1
-
-    logger.info("Wishlist price check complete: %d alerts sent", alerts_sent)
+    await product_svc.process_wishlist_alerts_for_all_products()
+    logger.info("Wishlist price check complete")
 
 
 # =============================================================================

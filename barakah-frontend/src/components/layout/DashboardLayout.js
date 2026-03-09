@@ -10,7 +10,7 @@ import { useNotification } from '../../context/NotificationContext';
 
 const ownerNav = [
   {
-    label: 'Dashboard',
+    labelKey: 'dashboard',
     to: '/dashboard',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -19,7 +19,7 @@ const ownerNav = [
     ),
   },
   {
-    label: 'My Shops',
+    labelKey: 'myShops',
     to: '/dashboard/shops',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -29,7 +29,7 @@ const ownerNav = [
     ),
   },
   {
-    label: 'Messages',
+    labelKey: 'messages',
     to: '/dashboard/chat',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -38,7 +38,7 @@ const ownerNav = [
     ),
   },
   {
-    label: 'Notifications',
+    labelKey: 'notifications',
     to: '/dashboard/notifications',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -47,7 +47,7 @@ const ownerNav = [
     ),
   },
   {
-    label: 'Profile',
+    labelKey: 'profile',
     to: '/dashboard/profile',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -59,12 +59,12 @@ const ownerNav = [
 
 const consumerNav = [
   {
-    label: 'Dashboard',
+    labelKey: 'dashboard',
     to: '/dashboard',
     icon: ownerNav[0].icon,
   },
   {
-    label: 'Explore',
+    labelKey: 'explore',
     to: '/dashboard/explore',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -73,7 +73,7 @@ const consumerNav = [
     ),
   },
   {
-    label: 'Wishlist',
+    labelKey: 'wishlist',
     to: '/dashboard/wishlist',
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -82,17 +82,17 @@ const consumerNav = [
     ),
   },
   {
-    label: 'Messages',
+    labelKey: 'messages',
     to: '/dashboard/chat',
     icon: ownerNav[2].icon,
   },
   {
-    label: 'Notifications',
+    labelKey: 'notifications',
     to: '/dashboard/notifications',
     icon: ownerNav[3].icon,
   },
   {
-    label: 'Profile',
+    labelKey: 'profile',
     to: '/dashboard/profile',
     icon: ownerNav[4].icon,
   },
@@ -109,6 +109,29 @@ export default function DashboardLayout({ children }) {
 
   const navItems = isShopOwner ? ownerNav : consumerNav;
   const logoUrl = `${process.env.PUBLIC_URL || ''}/logo.svg`;
+  const labels = isBangla
+    ? {
+        dashboard: 'ড্যাশবোর্ড',
+        myShops: 'আমার দোকান',
+        messages: 'মেসেজ',
+        notifications: 'নোটিফিকেশন',
+        profile: 'প্রোফাইল',
+        explore: 'এক্সপ্লোর',
+        wishlist: 'উইশলিস্ট',
+        unread: 'অপঠিত',
+        logout: 'লগ আউট',
+      }
+    : {
+        dashboard: 'Dashboard',
+        myShops: 'My Shops',
+        messages: 'Messages',
+        notifications: 'Notifications',
+        profile: 'Profile',
+        explore: 'Explore',
+        wishlist: 'Wishlist',
+        unread: 'unread',
+        logout: 'Logout',
+      };
 
   const handleLogout = () => {
     logout();
@@ -154,16 +177,16 @@ export default function DashboardLayout({ children }) {
             }
           >
             {item.icon}
-            <span className="flex-1">{item.label}</span>
+            <span className="flex-1">{labels[item.labelKey] || item.labelKey}</span>
             {item.to === '/dashboard/chat' && unreadTotal > 0 && (
               <span
-                title={`${unreadTotal} unread`}
+                title={`${unreadTotal} ${labels.unread}`}
                 className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(255,255,255,0.8)] dark:shadow-[0_0_0_2px_rgba(6,14,8,0.9)]"
               />
             )}
             {item.to === '/dashboard/notifications' && notificationUnreadCount > 0 && (
               <span
-                title={`${notificationUnreadCount} unread`}
+                title={`${notificationUnreadCount} ${labels.unread}`}
                 className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(255,255,255,0.8)] dark:shadow-[0_0_0_2px_rgba(6,14,8,0.9)]"
               />
             )}
@@ -206,15 +229,15 @@ export default function DashboardLayout({ children }) {
             size="sm"
           />
           <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-medium text-heading truncate">
+            <div className="font-medium text-heading truncate" style={{ fontSize: '12px', lineHeight: '16px' }}>
               {user?.first_name} {user?.last_name}
-            </p>
-            <p className="text-[10px] text-muted truncate">{user?.email}</p>
+            </div>
+            <div className="text-muted truncate" style={{ fontSize: '10px', lineHeight: '14px' }}>{user?.email}</div>
           </div>
           <button
             onClick={handleLogout}
             className="w-7 h-7 rounded-lg flex items-center justify-center text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
-            title="Logout"
+            title={labels.logout}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

@@ -28,6 +28,11 @@ class LoginRequest(BaseModel):
     password: str = Field(..., examples=["Str0ng!Pass"])
 
 
+class RefreshTokenRequest(BaseModel):
+    """Payload to exchange refresh token for a new token pair."""
+    refresh_token: str
+
+
 class SendVerificationCodeRequest(BaseModel):
     """Request to send / resend the email verification code."""
     email: EmailStr

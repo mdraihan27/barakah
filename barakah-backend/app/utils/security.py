@@ -84,6 +84,25 @@ def decode_access_token(token: str) -> dict:
         )
 
 
+def decode_refresh_token(token: str) -> dict:
+    """
+    Decode and validate a refresh token.
+    Raises HTTP 401 on any failure.
+    """
+    settings = get_settings()
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise JWTError("Not a refresh token")
+        return payload
+    except JWTError as exc:
+        logger.warning("Invalid refresh token: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token.",
+        )
+
+
 # ── Verification / Reset code generation ────────────────────────────────────
 
 def generate_verification_code(length: int = 6) -> str:

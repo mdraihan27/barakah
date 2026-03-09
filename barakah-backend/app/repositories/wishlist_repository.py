@@ -78,6 +78,25 @@ class WishlistRepository:
             items.append(doc)
         return items
 
+    async def find_by_product_name(self, product_name: str) -> List[dict]:
+        """Find wishlist items matching product name (case-insensitive exact match)."""
+        cursor = self.collection.find({
+            "product_name": {"$regex": f"^{re.escape(product_name)}$", "$options": "i"},
+        })
+        items = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            items.append(doc)
+        return items
+
+    async def update_by_id(self, item_id: str, update_fields: dict) -> bool:
+        """Update a wishlist item by id. Returns True when modified."""
+        result = await self.collection.update_one(
+            {"_id": ObjectId(item_id)},
+            {"$set": update_fields},
+        )
+        return result.modified_count > 0
+
     # ── Deleters ─────────────────────────────────────────────────────────
 
     async def delete_by_id(self, item_id: str) -> bool:

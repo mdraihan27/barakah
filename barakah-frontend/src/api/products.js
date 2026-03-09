@@ -1,6 +1,9 @@
 import API from './client';
 
 export const productsAPI = {
+  getCatalogCategories: () => API.get('/products/catalog/categories'),
+  getCatalogNames: (category) => API.get('/products/catalog/names', { params: { category } }),
+  addCatalogName: (data) => API.post('/products/catalog/names', data),
   createProduct: (data) => API.post('/products', data),
   updateProduct: (productId, data) => API.patch(
     `/products/${productId}`,

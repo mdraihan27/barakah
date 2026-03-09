@@ -3,6 +3,7 @@ import API from './client';
 export const authAPI = {
   signup: (data) => API.post('/auth/signup', data),
   login: (data) => API.post('/auth/login', data),
+  refresh: (refreshToken) => API.post('/auth/refresh', { refresh_token: refreshToken }),
   sendVerificationCode: (email) => API.post('/auth/send-verification-code', { email }),
   verifyEmail: (email, code) => API.post('/auth/verify-email', { email, code }),
   forgotPassword: (email) => API.post('/auth/forgot-password', { email }),

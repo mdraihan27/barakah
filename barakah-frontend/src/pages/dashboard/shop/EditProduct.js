@@ -9,8 +9,6 @@ import Select from '../../../components/ui/Select';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { getApiErrorMessage } from '../../../utils/apiError';
 
-const PRODUCT_CATEGORIES = ['Rice', 'Lentils', 'Oil', 'Spices', 'Flour', 'Sugar', 'Salt', 'Tea', 'Milk', 'Eggs', 'Vegetables', 'Fruits', 'Fish', 'Meat', 'Snacks', 'Beverages', 'Cleaning', 'Personal Care', 'Baby Products', 'Other'];
-
 export default function EditProduct() {
   const { productId } = useParams();
   const { isBangla } = useLanguage();
@@ -26,6 +24,16 @@ export default function EditProduct() {
   const [saving, setSaving] = useState(false);
   const [updatingPrice, setUpdatingPrice] = useState(false);
   const [priceHistory, setPriceHistory] = useState([]);
+  const [categoryOptions, setCategoryOptions] = useState([]);
+  const [nameOptions, setNameOptions] = useState([]);
+  const [newCatalogName, setNewCatalogName] = useState('');
+  const [addingName, setAddingName] = useState(false);
+
+  useEffect(() => {
+    productsAPI.getCatalogCategories()
+      .then((r) => setCategoryOptions(r.data?.categories || []))
+      .catch(() => setCategoryOptions([]));
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -40,6 +48,15 @@ export default function EditProduct() {
         setCurrentPrice(p.current_price ?? p.price ?? '');
         setShopId(p.shop_id || '');
         setPriceHistory(phRes.data.price_history || phRes.data || []);
+
+        if (p.category) {
+          const namesRes = await productsAPI.getCatalogNames(p.category).catch(() => ({ data: { names: [] } }));
+          const loadedNames = namesRes.data?.names || [];
+          if (p.name && !loadedNames.some((n) => n.toLowerCase() === p.name.toLowerCase())) {
+            loadedNames.unshift(p.name);
+          }
+          setNameOptions(loadedNames);
+        }
       } catch {
         toast.error('Product not found');
         navigate(-1);
@@ -47,10 +64,29 @@ export default function EditProduct() {
     })();
   }, [productId, navigate]);
 
+  useEffect(() => {
+    if (!form.category) {
+      setNameOptions([]);
+      return;
+    }
+
+    productsAPI.getCatalogNames(form.category)
+      .then((r) => {
+        const names = r.data?.names || [];
+        if (form.name && !names.some((n) => n.toLowerCase() === form.name.toLowerCase())) {
+          names.unshift(form.name);
+        }
+        setNameOptions(names);
+      })
+      .catch(() => setNameOptions(form.name ? [form.name] : []));
+  }, [form.category]);
+
   const setValue = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (!form.category) { toast.error(isBangla ? 'ক্যাটাগরি নির্বাচন করুন' : 'Category required'); return; }
+    if (!form.name.trim()) { toast.error(isBangla ? 'পণ্যের নাম নির্বাচন করুন' : 'Product name required'); return; }
     setSaving(true);
     try {
       const payload = new FormData();
@@ -67,6 +103,35 @@ export default function EditProduct() {
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Failed'));
     } finally { setSaving(false); }
+  };
+
+  const handleAddCatalogName = async () => {
+    const value = newCatalogName.trim();
+    if (!form.category) {
+      toast.error(isBangla ? 'আগে ক্যাটাগরি দিন' : 'Select category first');
+      return;
+    }
+    if (value.length < 2) {
+      toast.error(isBangla ? 'নাম কমপক্ষে ২ অক্ষর' : 'Name must be at least 2 characters');
+      return;
+    }
+
+    setAddingName(true);
+    try {
+      const res = await productsAPI.addCatalogName({
+        category: form.category,
+        name: value,
+      });
+      const names = res.data?.names || [];
+      setNameOptions(names);
+      setValue('name', value);
+      setNewCatalogName('');
+      toast.success(isBangla ? 'নাম যোগ হয়েছে' : 'Product name added');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to add product name'));
+    } finally {
+      setAddingName(false);
+    }
   };
 
   const handlePriceUpdate = async () => {
@@ -100,18 +165,52 @@ export default function EditProduct() {
         <Card className="mb-6">
           <CardBody>
             <form onSubmit={handleSave} className="space-y-5">
-              <div>
-                <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'নাম' : 'Name'} *</label>
-                <input value={form.name} onChange={(e) => setValue('name', e.target.value)} className={fieldCls} required />
-              </div>
               <Select
                 label={isBangla ? 'ক্যাটাগরি' : 'Category'}
                 value={form.category}
-                onChange={(e) => setValue('category', e.target.value)}
+                onChange={(e) => {
+                  setValue('category', e.target.value);
+                  setValue('name', '');
+                }}
               >
                 <option value="">—</option>
-                {PRODUCT_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                {categoryOptions.map((c) => <option key={c} value={c}>{c}</option>)}
               </Select>
+              <Select
+                label={isBangla ? 'নাম' : 'Name'}
+                value={form.name}
+                onChange={(e) => setValue('name', e.target.value)}
+                required
+                disabled={!form.category}
+              >
+                <option value="">{isBangla ? 'তালিকা থেকে নির্বাচন করুন' : 'Select from list'}</option>
+                {nameOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+              </Select>
+              <p className="-mt-3 text-[11px] text-muted">
+                {isBangla
+                  ? 'প্রথমে তালিকা থেকে পণ্যের নাম বাছাই করুন। না পেলে নিচে নিজের পণ্যের নাম যোগ করুন।'
+                  : 'Choose a product name from the list first. If your specific product is not found, add your own below.'}
+              </p>
+              <div>
+                <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'নতুন পণ্যের নাম যোগ করুন' : 'Add New Product Name'}</label>
+                <div className="flex gap-2">
+                  <input
+                    value={newCatalogName}
+                    onChange={(e) => setNewCatalogName(e.target.value)}
+                    className={fieldCls}
+                    placeholder={isBangla ? 'যেমন: কালোজিরা চাল' : 'e.g. Kalijira Rice'}
+                    disabled={!form.category}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCatalogName}
+                    disabled={addingName || !form.category || !newCatalogName.trim()}
+                    className="rounded-xl border border-stone-200/70 dark:border-white/[0.08] px-4 py-2.5 text-[12px] font-medium text-body hover:bg-stone-50 dark:hover:bg-white/[0.03] disabled:opacity-60"
+                  >
+                    {addingName ? '...' : (isBangla ? 'যোগ করুন' : 'Add')}
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'বিবরণ' : 'Description'}</label>
                 <textarea value={form.description} onChange={(e) => setValue('description', e.target.value)} rows={3} className={fieldCls} />

@@ -35,6 +35,13 @@ class WishlistService:
             "user_id": user_id,
             "product_name": product_name,
             "target_price": data.get("target_price"),
+            "baseline_price": data.get("baseline_price"),
+            "source_product_id": data.get("source_product_id"),
+            "source_shop_id": data.get("source_shop_id"),
+            "user_lat": data.get("user_lat"),
+            "user_lng": data.get("user_lng"),
+            "radius_km": data.get("radius_km", 10.0),
+            "last_alerted_price": None,
         }
 
         item = await self.wishlist_repo.create(item_doc)

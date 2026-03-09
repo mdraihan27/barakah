@@ -8,9 +8,14 @@ from fastapi import APIRouter, Depends, File, Form, Query, Request, UploadFile, 
 from app.core.dependencies import get_db, require_role
 from app.core.logging import get_logger
 from app.repositories.product_repository import ProductRepository
+from app.repositories.product_catalog_repository import ProductCatalogRepository
 from app.repositories.notification_repository import NotificationRepository
 from app.repositories.shop_repository import ShopRepository
+from app.repositories.wishlist_repository import WishlistRepository
 from app.schemas.product import (
+    ProductCatalogCategoriesResponse,
+    ProductCatalogNameCreateRequest,
+    ProductCatalogNamesResponse,
     ProductCreateRequest,
     ProductListResponse,
     ProductPriceHistoryResponse,
@@ -30,7 +35,61 @@ router = APIRouter(prefix="/products", tags=["Products"])
 
 def _product_service(db=Depends(get_db)) -> ProductService:
     notification_service = NotificationService(NotificationRepository(db))
-    return ProductService(ProductRepository(db), ShopRepository(db), notification_service)
+    return ProductService(
+        ProductRepository(db),
+        ProductCatalogRepository(db),
+        ShopRepository(db),
+        notification_service,
+        WishlistRepository(db),
+    )
+
+
+# =============================================================================
+# Product Catalog (global)
+# =============================================================================
+
+@router.get(
+    "/catalog/categories",
+    response_model=ProductCatalogCategoriesResponse,
+    summary="List product categories for catalog",
+)
+async def get_product_catalog_categories(
+    service: ProductService = Depends(_product_service),
+):
+    """Return category list used to choose product names."""
+    categories = await service.list_catalog_categories()
+    return ProductCatalogCategoriesResponse(categories=categories)
+
+
+@router.get(
+    "/catalog/names",
+    response_model=ProductCatalogNamesResponse,
+    summary="List product names by category",
+)
+async def get_product_catalog_names(
+    category: str = Query(..., min_length=2),
+    service: ProductService = Depends(_product_service),
+):
+    """Return global names under one category for dropdown selection."""
+    names = await service.list_catalog_names(category)
+    return ProductCatalogNamesResponse(category=category.strip(), names=names)
+
+
+@router.post(
+    "/catalog/names",
+    response_model=ProductCatalogNamesResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add product name to global catalog",
+)
+async def add_product_catalog_name(
+    body: ProductCatalogNameCreateRequest,
+    current_user: dict = Depends(require_role("shop_owner", "admin")),
+    service: ProductService = Depends(_product_service),
+):
+    """Add one product name globally so all shops can select it next time."""
+    logger.info("POST /products/catalog/names — user %s", current_user["_id"])
+    result = await service.add_catalog_name(category=body.category, name=body.name)
+    return ProductCatalogNamesResponse(**result)
 
 
 # =============================================================================

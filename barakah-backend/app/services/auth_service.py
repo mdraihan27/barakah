@@ -12,6 +12,7 @@ from app.core.logging import get_logger
 from app.repositories.user_repository import UserRepository
 from app.services.email_service import send_password_reset_email, send_verification_email
 from app.utils.security import (
+    decode_refresh_token,
     create_token_pair,
     generate_verification_code,
     hash_password,
@@ -116,6 +117,30 @@ class AuthService:
         tokens = create_token_pair(user["_id"])
         logger.info("Login successful: %s", email)
         return {"user": user, "tokens": tokens}
+
+    async def refresh_tokens(self, refresh_token: str) -> dict:
+        """
+        Validate refresh token and return a newly issued token pair.
+        Expiry durations are taken from .env-backed settings.
+        """
+        payload = decode_refresh_token(refresh_token)
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token payload.",
+            )
+
+        user = await self.user_repo.find_by_id(user_id)
+        if not user or not user.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User no longer valid for token refresh.",
+            )
+
+        tokens = create_token_pair(user_id)
+        logger.info("Token refresh successful for user %s", user_id)
+        return tokens
 
     # ─── Email verification: send code ───────────────────────────────────
 

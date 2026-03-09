@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../../LanguageContext';
 import { notificationsAPI } from '../../../api/notifications';
@@ -10,6 +11,7 @@ import EmptyState from '../../../components/common/EmptyState';
 
 export default function Notifications() {
   const { isBangla } = useLanguage();
+  const navigate = useNavigate();
   const { unreadCount, setUnreadCount, eventTick, lastNotification } = useNotification();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +89,28 @@ export default function Notifications() {
     }
   };
 
+  const getLinkedProductId = (notif) => {
+    const payload = notif?.payload || {};
+    return (
+      payload.matched_product_id ||
+      payload.product_id ||
+      payload.competitor_product_id ||
+      payload.your_product_id ||
+      null
+    );
+  };
+
+  const handleOpenNotification = async (notif) => {
+    const nId = notif._id || notif.id;
+    const linkedProductId = getLinkedProductId(notif);
+    if (!linkedProductId) return;
+
+    if (!notif.is_read) {
+      await handleMarkRead(nId);
+    }
+    navigate(`/dashboard/product/${linkedProductId}`);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto">
@@ -121,8 +145,17 @@ export default function Notifications() {
           <div className="space-y-2">
             {notifications.map((notif) => {
               const nId = notif._id || notif.id;
+              const linkedProductId = getLinkedProductId(notif);
+              const isClickable = Boolean(linkedProductId);
               return (
-                <Card key={nId} className={!notif.is_read ? 'ring-1 ring-emerald-200/50 dark:ring-emerald-500/20' : ''}>
+                <Card
+                  key={nId}
+                  className={[
+                    !notif.is_read ? 'ring-1 ring-emerald-200/50 dark:ring-emerald-500/20' : '',
+                    isClickable ? 'cursor-pointer hover:border-emerald-300 dark:hover:border-emerald-500/25 transition' : '',
+                  ].join(' ').trim()}
+                  onClick={() => handleOpenNotification(notif)}
+                >
                   <CardBody>
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5 flex-shrink-0">{getIcon(notif.type)}</div>
@@ -135,9 +168,19 @@ export default function Notifications() {
                             {new Date(notif.created_at).toLocaleDateString()} · {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
                         )}
+                        {isClickable && (
+                          <p className="mt-1 text-[11px] text-emerald-700 dark:text-emerald-300">
+                            {isBangla ? 'পণ্যটি দেখতে ক্লিক করুন' : 'Click to open product'}
+                          </p>
+                        )}
                       </div>
                       {!notif.is_read && (
-                        <button onClick={() => handleMarkRead(nId)} title="Mark as read"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkRead(nId);
+                          }}
+                          title="Mark as read"
                           className="flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-500 hover:bg-emerald-600 transition mt-1.5" />
                       )}
                     </div>

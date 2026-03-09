@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../LanguageContext';
@@ -51,8 +51,14 @@ export default function Signup() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isBangla } = useLanguage();
-  const { signup } = useAuth();
+  const { signup, loading: authLoading, isAuthenticated } = useAuth();
   const t = useMemo(() => (isBangla ? T.bn : T.en), [isBangla]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const initialRole = (() => {
     const q = (searchParams.get('role') || '').toLowerCase();

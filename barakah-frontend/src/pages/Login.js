@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../LanguageContext';
@@ -22,13 +22,19 @@ function GoogleIcon({ className = '' }) {
 export default function Login() {
   const navigate = useNavigate();
   const { isBangla } = useLanguage();
-  const { login } = useAuth();
+  const { login, loading: authLoading, isAuthenticated } = useAuth();
   const t = useMemo(() => (isBangla ? T.bn : T.en), [isBangla]);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
