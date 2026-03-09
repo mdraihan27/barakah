@@ -31,7 +31,9 @@ class ChatRepository:
         doc = {
             "participants": sorted(participants),
             "last_message": None,
+            "last_message_sender_id": None,
             "last_message_at": None,
+            "unread_counts": {participant_id: 0 for participant_id in participants},
             "created_at": now,
         }
         result = await self.conversations.insert_one(doc)
@@ -72,26 +74,35 @@ class ChatRepository:
 
     # ── Message Operations ───────────────────────────────────────────────
 
-    async def save_message(self, message_data: dict) -> dict:
+    async def save_message(self, message_data: dict, recipient_ids: List[str]) -> dict:
         """
         Save a message and update the conversation's last_message metadata.
         """
         now = datetime.now(timezone.utc)
         message_data["created_at"] = now
+        message_data["seen_by"] = [message_data["sender_id"]]
+        message_data["seen_at"] = None
 
         # Insert message
         result = await self.messages.insert_one(message_data)
         message_data["_id"] = str(result.inserted_id)
 
+        inc_doc = {f"unread_counts.{recipient_id}": 1 for recipient_id in recipient_ids}
+
         # Update conversation last_message
+        update_doc = {
+            "$set": {
+                "last_message": message_data["text"][:100],
+                "last_message_sender_id": message_data["sender_id"],
+                "last_message_at": now,
+            }
+        }
+        if inc_doc:
+            update_doc["$inc"] = inc_doc
+
         await self.conversations.update_one(
             {"_id": ObjectId(message_data["conversation_id"])},
-            {
-                "$set": {
-                    "last_message": message_data["text"][:100],
-                    "last_message_at": now,
-                }
-            },
+            update_doc,
         )
 
         logger.debug(
@@ -103,10 +114,10 @@ class ChatRepository:
     async def get_messages(
         self, conversation_id: str, skip: int = 0, limit: int = 50
     ) -> List[dict]:
-        """Get messages in a conversation, newest first."""
+        """Get messages in a conversation, oldest first."""
         cursor = (
             self.messages.find({"conversation_id": conversation_id})
-            .sort("created_at", -1)
+            .sort("created_at", 1)
             .skip(skip)
             .limit(limit)
         )
@@ -120,10 +131,67 @@ class ChatRepository:
         """Count messages in a conversation."""
         return await self.messages.count_documents({"conversation_id": conversation_id})
 
+    async def mark_messages_seen(self, conversation_id: str, user_id: str) -> dict:
+        """Mark unseen incoming messages as seen by the given user."""
+        now = datetime.now(timezone.utc)
+        latest_unseen = await self.messages.find_one(
+            {
+                "conversation_id": conversation_id,
+                "sender_id": {"$ne": user_id},
+                "seen_by": {"$ne": user_id},
+            },
+            sort=[("created_at", -1)],
+            projection={"_id": 1},
+        )
+
+        update_result = await self.messages.update_many(
+            {
+                "conversation_id": conversation_id,
+                "sender_id": {"$ne": user_id},
+                "seen_by": {"$ne": user_id},
+            },
+            {
+                "$addToSet": {"seen_by": user_id},
+                "$set": {"seen_at": now},
+            },
+        )
+
+        await self.conversations.update_one(
+            {"_id": ObjectId(conversation_id)},
+            {"$set": {f"unread_counts.{user_id}": 0, "updated_at": now}},
+        )
+
+        return {
+            "updated_count": update_result.modified_count,
+            "last_seen_message_id": str(latest_unseen["_id"]) if latest_unseen else None,
+        }
+
+    async def get_unread_total(self, user_id: str) -> int:
+        """Calculate total unread messages for a user across conversations."""
+        pipeline = [
+            {"$match": {"participants": user_id}},
+            {
+                "$project": {
+                    "count": {
+                        "$ifNull": [
+                            {"$getField": {"field": user_id, "input": "$unread_counts"}},
+                            0,
+                        ]
+                    }
+                }
+            },
+            {"$group": {"_id": None, "total": {"$sum": "$count"}}},
+        ]
+        result = await self.conversations.aggregate(pipeline).to_list(length=1)
+        if not result:
+            return 0
+        return int(result[0].get("total", 0))
+
     # ── Indexes ──────────────────────────────────────────────────────────
 
     async def ensure_indexes(self) -> None:
         """Create required indexes on chat collections."""
         await self.conversations.create_index("participants")
+        await self.conversations.create_index("last_message_at")
         await self.messages.create_index([("conversation_id", 1), ("created_at", -1)])
         logger.info("Chat collection indexes ensured.")

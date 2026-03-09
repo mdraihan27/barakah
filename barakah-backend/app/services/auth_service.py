@@ -243,6 +243,8 @@ class AuthService:
 
         user = await self.user_repo.find_by_email(email)
 
+        is_new_user = False
+
         if user:
             # Update avatar / name if changed
             await self.user_repo.update_by_id(
@@ -257,6 +259,7 @@ class AuthService:
             user = await self.user_repo.find_by_id(user["_id"])
         else:
             # First-time Google sign-in — create the account
+            is_new_user = True
             user = await self.user_repo.create(
                 {
                     "first_name": google_user_info.get("given_name", ""),
@@ -272,7 +275,7 @@ class AuthService:
 
         tokens = create_token_pair(user["_id"])
         logger.info("Google auth successful: %s", email)
-        return {"user": user, "tokens": tokens}
+        return {"user": user, "tokens": tokens, "is_new_user": is_new_user}
 
     async def update_avatar(self, user_id: str, avatar_url: str) -> dict:
         """Set a user's custom avatar URL and return updated profile."""
@@ -281,6 +284,15 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
         await self.user_repo.update_by_id(user_id, {"avatar_url": avatar_url})
+        return await self.user_repo.find_by_id(user_id)
+
+    async def update_role(self, user_id: str, role: str) -> dict:
+        """Update role for the authenticated user and return profile."""
+        user = await self.user_repo.find_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+
+        await self.user_repo.update_by_id(user_id, {"role": role})
         return await self.user_repo.find_by_id(user_id)
 
     # ─── Internal helper ─────────────────────────────────────────────────

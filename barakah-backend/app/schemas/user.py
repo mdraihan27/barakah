@@ -51,6 +51,11 @@ class ResetPasswordRequest(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=128, examples=["NewStr0ng!Pass"])
 
 
+class UpdateRoleRequest(BaseModel):
+    """Payload to update user role after OAuth onboarding."""
+    role: str = Field(..., pattern="^(user|shop_owner)$", examples=["user", "shop_owner"])
+
+
 # =============================================================================
 # Response Schemas
 # =============================================================================

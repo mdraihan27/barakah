@@ -8,6 +8,7 @@ import AppRoutes from './AppRoutes';
 import { ThemeProvider } from './ThemeContext';
 import { LanguageProvider } from './LanguageContext';
 import { AuthProvider } from './context/AuthContext';
+import { ChatProvider } from './context/ChatContext';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -17,18 +18,20 @@ root.render(
       <LanguageProvider>
         <BrowserRouter>
           <AuthProvider>
-            <AppRoutes />
-            <Toaster
-              position="top-right"
-              toastOptions={{
-                duration: 3500,
-                style: {
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                  padding: '12px 16px',
-                },
-              }}
-            />
+            <ChatProvider>
+              <AppRoutes />
+              <Toaster
+                position="top-right"
+                toastOptions={{
+                  duration: 3500,
+                  style: {
+                    borderRadius: '12px',
+                    fontSize: '13px',
+                    padding: '12px 16px',
+                  },
+                }}
+              />
+            </ChatProvider>
           </AuthProvider>
         </BrowserRouter>
       </LanguageProvider>

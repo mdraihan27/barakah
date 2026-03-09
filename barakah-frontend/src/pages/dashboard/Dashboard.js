@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../LanguageContext';
 import { shopsAPI } from '../../api/shops';
@@ -13,9 +13,17 @@ import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 export default function Dashboard() {
   const { user, isShopOwner } = useAuth();
+  const navigate = useNavigate();
   const { isBangla } = useLanguage();
   const [stats, setStats] = useState({ shops: 0, notifications: 0, unread: 0, wishlist: 0, conversations: 0 });
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const needsRoleSelection = sessionStorage.getItem('barakah-needs-role-selection') === '1';
+    if (needsRoleSelection) {
+      navigate('/dashboard/select-role', { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const fetchStats = async () => {

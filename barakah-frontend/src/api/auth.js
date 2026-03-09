@@ -14,6 +14,7 @@ export const authAPI = {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
   },
+  updateMyRole: (role) => API.patch('/auth/me/role', { role }),
   getGoogleOAuthURL: () => API.get('/auth/google'),
   getMe: () => API.get('/auth/me'),
 };

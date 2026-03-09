@@ -5,6 +5,7 @@ import { useLanguage } from '../../LanguageContext';
 import { useTheme } from '../../ThemeContext';
 import Avatar from '../ui/Avatar';
 import PageShell from '../common/PageShell';
+import { useChat } from '../../context/ChatContext';
 
 const ownerNav = [
   {
@@ -98,6 +99,7 @@ const consumerNav = [
 
 export default function DashboardLayout({ children }) {
   const { user, logout, isShopOwner } = useAuth();
+  const { unreadTotal } = useChat();
   const { isDark, toggleTheme } = useTheme();
   const { isBangla, toggleLanguage } = useLanguage();
   const navigate = useNavigate();
@@ -150,7 +152,13 @@ export default function DashboardLayout({ children }) {
             }
           >
             {item.icon}
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.to === '/dashboard/chat' && unreadTotal > 0 && (
+              <span
+                title={`${unreadTotal} unread`}
+                className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_2px_rgba(255,255,255,0.8)] dark:shadow-[0_0_0_2px_rgba(6,14,8,0.9)]"
+              />
+            )}
           </NavLink>
         ))}
       </nav>

@@ -20,6 +20,7 @@ from app.schemas.user import (
     SendVerificationCodeRequest,
     SignupRequest,
     TokenResponse,
+    UpdateRoleRequest,
     UserResponse,
     VerifyEmailRequest,
 )
@@ -193,12 +194,15 @@ async def google_callback(
         google_user = await exchange_google_code(code)
         result = await service.google_authenticate(google_user)
         tokens = result["tokens"]
+        is_new_user = bool(result.get("is_new_user"))
         # Pass tokens as query params so the frontend can pick them up
         redirect_url = (
             f"{settings.REDIRECT_DASHBOARD_URL}"
             f"?access_token={tokens['access_token']}"
             f"&refresh_token={tokens['refresh_token']}"
         )
+        if is_new_user:
+            redirect_url += "&is_new_user=1"
         logger.info("Google auth successful — redirecting to dashboard")
         return RedirectResponse(url=redirect_url, status_code=status.HTTP_302_FOUND)
     except Exception as exc:  # noqa: BLE001
@@ -237,4 +241,20 @@ async def update_my_avatar(
     relative_path = await save_image(image, "users")
     avatar_url = str(request.base_url).rstrip("/") + relative_path
     updated_user = await service.update_avatar(current_user["_id"], avatar_url)
+    return _to_user_response(updated_user)
+
+
+@router.patch(
+    "/me/role",
+    response_model=UserResponse,
+    summary="Update current user role",
+)
+async def update_my_role(
+    body: UpdateRoleRequest,
+    current_user: dict = Depends(get_current_user),
+    service: AuthService = Depends(_auth_service),
+):
+    """Set role to consumer(user) or seller(shop_owner) during onboarding."""
+    logger.info("PATCH /auth/me/role — user %s", current_user["_id"])
+    updated_user = await service.update_role(current_user["_id"], body.role)
     return _to_user_response(updated_user)

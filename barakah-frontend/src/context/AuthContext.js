@@ -13,6 +13,11 @@ function readGoogleTokensFromUrl() {
   return null;
 }
 
+function readGoogleNewUserFlagFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('is_new_user') === '1';
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() =>
     JSON.parse(localStorage.getItem('barakah-user') || 'null')
@@ -41,8 +46,16 @@ export function AuthProvider({ children }) {
   /* ── Remove OAuth tokens from URL bar after capture ── */
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    if (readGoogleNewUserFlagFromUrl()) {
+      sessionStorage.setItem('barakah-needs-role-selection', '1');
+    }
+
     if (params.get('access_token') && params.get('refresh_token')) {
-      const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+      params.delete('access_token');
+      params.delete('refresh_token');
+      params.delete('is_new_user');
+      const qs = params.toString();
+      const cleanUrl = `${window.location.origin}${window.location.pathname}${qs ? `?${qs}` : ''}`;
       window.history.replaceState({}, document.title, cleanUrl);
     }
   }, []);

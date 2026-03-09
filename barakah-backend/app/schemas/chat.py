@@ -23,6 +23,16 @@ class MessageCreateRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000)
 
 
+class MarkReadResponse(BaseModel):
+    """Response for marking a conversation as read."""
+    updated_count: int
+
+
+class UnreadSummaryResponse(BaseModel):
+    """Total unread messages for the current user across conversations."""
+    total_unread: int
+
+
 # =============================================================================
 # Response Schemas
 # =============================================================================
@@ -33,6 +43,8 @@ class MessageResponse(BaseModel):
     conversation_id: str
     sender_id: str
     text: str
+    seen_by: List[str] = []
+    seen_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:
@@ -41,10 +53,21 @@ class MessageResponse(BaseModel):
 
 class ConversationResponse(BaseModel):
     """Conversation summary."""
+    class Participant(BaseModel):
+        id: str = Field(..., alias="_id")
+        first_name: str
+        last_name: str
+        avatar_url: Optional[str] = None
+
+        class Config:
+            populate_by_name = True
+
     id: str = Field(..., alias="_id")
-    participants: List[str]
+    participants: List[Participant]
     last_message: Optional[str] = None
+    last_message_sender_id: Optional[str] = None
     last_message_at: Optional[datetime] = None
+    unread_count: int = 0
     created_at: datetime
 
     class Config:

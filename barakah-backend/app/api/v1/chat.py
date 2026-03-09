@@ -13,9 +13,11 @@ from app.schemas.chat import (
     ConversationCreateRequest,
     ConversationListResponse,
     ConversationResponse,
+    MarkReadResponse,
     MessageCreateRequest,
     MessageListResponse,
     MessageResponse,
+    UnreadSummaryResponse,
 )
 from app.services.chat_service import ChatService, connection_manager
 from app.utils.security import decode_access_token
@@ -28,7 +30,9 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 # ── Helper to build service from DI ─────────────────────────────────────────
 
 def _chat_service(db=Depends(get_db)) -> ChatService:
-    return ChatService(ChatRepository(db))
+    from app.repositories.user_repository import UserRepository
+
+    return ChatService(ChatRepository(db), UserRepository(db))
 
 
 # =============================================================================
@@ -78,6 +82,21 @@ async def list_conversations(
         conversations=[ConversationResponse(**c) for c in result["conversations"]],
         total=result["total"],
     )
+
+
+@router.get(
+    "/conversations/{conversation_id}",
+    response_model=ConversationResponse,
+    summary="Get one conversation",
+)
+async def get_conversation(
+    conversation_id: str,
+    current_user: dict = Depends(get_current_user),
+    service: ChatService = Depends(_chat_service),
+):
+    """Get a single conversation summary for header details and participant profile."""
+    conversation = await service.get_conversation(conversation_id, current_user["_id"])
+    return ConversationResponse(**conversation)
 
 
 # =============================================================================
@@ -142,11 +161,40 @@ async def get_messages(
     )
 
 
+@router.post(
+    "/conversations/{conversation_id}/read",
+    response_model=MarkReadResponse,
+    summary="Mark conversation messages as read",
+)
+async def mark_conversation_read(
+    conversation_id: str,
+    current_user: dict = Depends(get_current_user),
+    service: ChatService = Depends(_chat_service),
+):
+    """Mark incoming messages in this conversation as seen by the current user."""
+    result = await service.mark_conversation_read(conversation_id, current_user["_id"])
+    return MarkReadResponse(updated_count=result.get("updated_count", 0))
+
+
+@router.get(
+    "/unread-summary",
+    response_model=UnreadSummaryResponse,
+    summary="Get unread chat summary",
+)
+async def get_unread_summary(
+    current_user: dict = Depends(get_current_user),
+    service: ChatService = Depends(_chat_service),
+):
+    """Return total unread chat count for side-nav indicator."""
+    result = await service.get_unread_summary(current_user["_id"])
+    return UnreadSummaryResponse(**result)
+
+
 # =============================================================================
 # WebSocket — Real-Time Chat
 # =============================================================================
 
-@router.websocket("/ws/{conversation_id}")
+@router.websocket("/ws/conversations/{conversation_id}")
 async def websocket_chat(
     websocket: WebSocket,
     conversation_id: str,
@@ -177,7 +225,9 @@ async def websocket_chat(
     from app.core.database import get_database
     db = get_database()
     chat_repo = ChatRepository(db)
-    service = ChatService(chat_repo)
+    from app.repositories.user_repository import UserRepository
+
+    service = ChatService(chat_repo, UserRepository(db))
 
     # ── Verify participant ──
     try:
@@ -187,22 +237,56 @@ async def websocket_chat(
         return
 
     # ── Accept and manage connection ──
-    await connection_manager.connect(conversation_id, websocket)
+    await connection_manager.connect_conversation(conversation_id, websocket)
     logger.info("WebSocket connected: user %s in conversation %s", user_id, conversation_id)
 
     try:
         while True:
             data = await websocket.receive_text()
+            text = data.strip()
+            if not text:
+                continue
+
+            # Ignore heartbeat/control frames from clients.
+            if text.lower() in {"ping", "pong"}:
+                continue
 
             # Save and broadcast the message
             await service.send_message(
                 conversation_id=conversation_id,
                 sender_id=user_id,
-                text=data,
+                text=text,
             )
     except WebSocketDisconnect:
-        connection_manager.disconnect(conversation_id, websocket)
+        connection_manager.disconnect_conversation(conversation_id, websocket)
         logger.info("WebSocket disconnected: user %s from conversation %s", user_id, conversation_id)
     except Exception as exc:
-        connection_manager.disconnect(conversation_id, websocket)
+        connection_manager.disconnect_conversation(conversation_id, websocket)
         logger.error("WebSocket error: %s", exc)
+
+
+@router.websocket("/ws/user")
+async def websocket_user_updates(
+    websocket: WebSocket,
+    token: str = Query(..., description="JWT access token"),
+):
+    """User-scoped WebSocket channel for unread counters and chat badges."""
+    try:
+        payload = decode_access_token(token)
+        user_id = payload.get("sub")
+        if not user_id:
+            await websocket.close(code=4001, reason="Invalid token")
+            return
+    except Exception:
+        await websocket.close(code=4001, reason="Authentication failed")
+        return
+
+    await connection_manager.connect_user(user_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        connection_manager.disconnect_user(user_id, websocket)
+    except Exception as exc:
+        connection_manager.disconnect_user(user_id, websocket)
+        logger.error("User WebSocket error: %s", exc)

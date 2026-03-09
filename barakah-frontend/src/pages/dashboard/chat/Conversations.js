@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../LanguageContext';
 import { useAuth } from '../../../context/AuthContext';
+import { useChat } from '../../../context/ChatContext';
 import { chatAPI } from '../../../api/chat';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../../components/ui/Card';
@@ -12,23 +13,44 @@ import EmptyState from '../../../components/common/EmptyState';
 export default function Conversations() {
   const { isBangla } = useLanguage();
   const { user } = useAuth();
+  const { eventTick } = useChat();
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const loadConversations = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const res = await chatAPI.getConversations();
+      setConversations(res.data.conversations || []);
+    } catch {
+      setConversations([]);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await chatAPI.getConversations();
-        setConversations(res.data.conversations || res.data || []);
-      } catch { setConversations([]); }
-      finally { setLoading(false); }
-    })();
+    loadConversations(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (eventTick > 0) {
+      loadConversations(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventTick]);
 
   const getOtherParticipant = (conv) => {
     if (!conv.participants) return { name: 'User', id: '' };
     const other = conv.participants.find(p => p._id !== user?._id && p.id !== user?._id);
-    if (other) return { name: `${other.first_name || ''} ${other.last_name || ''}`.trim() || 'User', id: other._id || other.id };
+    if (other) {
+      return {
+        name: `${other.first_name || ''} ${other.last_name || ''}`.trim() || 'User',
+        id: other._id || other.id,
+        avatarUrl: other.avatar_url,
+      };
+    }
     return { name: conv.participant_name || 'User', id: '' };
   };
 
@@ -52,29 +74,35 @@ export default function Conversations() {
             {conversations.map((conv) => {
               const convId = conv._id || conv.id;
               const other = getOtherParticipant(conv);
-              const lastMsg = conv.last_message;
+              const unreadCount = Number(conv.unread_count || 0);
+              const hasUnseen = unreadCount > 0;
               return (
                 <Link key={convId} to={`/dashboard/chat/${convId}`}>
                   <Card className="hover:shadow-md transition-shadow">
                     <CardBody>
                       <div className="flex items-center gap-3">
-                        <Avatar name={other.name} size="md" />
+                        <Avatar name={other.name} src={other.avatarUrl} size="md" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <h3 className="text-[14px] font-semibold text-heading truncate">{other.name}</h3>
-                            {lastMsg?.created_at && (
+                            {conv.last_message_at && (
                               <span className="text-[11px] text-muted flex-shrink-0 ml-2">
-                                {new Date(lastMsg.created_at).toLocaleDateString()}
+                                {new Date(conv.last_message_at).toLocaleString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             )}
                           </div>
-                          {lastMsg?.text && (
-                            <p className="text-[12px] text-muted truncate mt-0.5">{lastMsg.text}</p>
-                          )}
+                          {conv.last_message ? (
+                            <div className="mt-0.5 flex items-center gap-2">
+                              {hasUnseen && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />}
+                              <p className={`text-[12px] truncate ${hasUnseen ? 'text-heading font-medium' : 'text-muted'}`}>
+                                {conv.last_message}
+                              </p>
+                            </div>
+                          ) : <p className="text-[12px] text-muted truncate mt-0.5">No messages yet</p>}
                         </div>
-                        {conv.unread_count > 0 && (
+                        {hasUnseen && (
                           <span className="w-5 h-5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                            {conv.unread_count}
+                            {unreadCount}
                           </span>
                         )}
                       </div>

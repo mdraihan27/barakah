@@ -43,6 +43,34 @@ class UserRepository:
             doc["_id"] = str(doc["_id"])
         return doc
 
+    async def find_by_ids(self, user_ids: list[str]) -> list[dict]:
+        """Fetch multiple users by id for lightweight profile rendering."""
+        object_ids = []
+        for user_id in user_ids:
+            try:
+                object_ids.append(ObjectId(user_id))
+            except Exception:
+                continue
+
+        if not object_ids:
+            return []
+
+        cursor = self.collection.find(
+            {"_id": {"$in": object_ids}},
+            {
+                "first_name": 1,
+                "last_name": 1,
+                "avatar_url": 1,
+                "google_avatar_url": 1,
+            },
+        )
+        users = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            doc["avatar_url"] = doc.get("avatar_url") or doc.get("google_avatar_url")
+            users.append(doc)
+        return users
+
     # ── Creators ─────────────────────────────────────────────────────────
 
     async def create(self, user_data: dict) -> dict:
