@@ -48,7 +48,7 @@ export default function AddProduct() {
         }
       })
       .catch(() => setNameOptions([]));
-  }, [form.category]);
+  }, [form.category, form.name]);
 
   const setValue = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 

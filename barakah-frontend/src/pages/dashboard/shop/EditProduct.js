@@ -79,7 +79,7 @@ export default function EditProduct() {
         setNameOptions(names);
       })
       .catch(() => setNameOptions(form.name ? [form.name] : []));
-  }, [form.category]);
+  }, [form.category, form.name]);
 
   const setValue = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
