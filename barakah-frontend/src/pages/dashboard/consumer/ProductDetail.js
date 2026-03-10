@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useLanguage } from '../../../LanguageContext';
 import { productsAPI } from '../../../api/products';
 import { wishlistAPI } from '../../../api/wishlist';
+import { shopsAPI } from '../../../api/shops';
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../../components/ui/Card';
 import Badge from '../../../components/ui/Badge';
@@ -18,6 +19,7 @@ export default function ProductDetail() {
   const { isBangla } = useLanguage();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
+  const [shop, setShop] = useState(null);
   const [priceHistory, setPriceHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
@@ -41,6 +43,11 @@ export default function ProductDetail() {
         ]);
         setProduct(pRes.data);
         setPriceHistory(normalizePriceHistory(phRes.data));
+
+        // Fetch shop info (non-blocking)
+        if (pRes.data?.shop_id) {
+          shopsAPI.getShop(pRes.data.shop_id).then(r => setShop(r.data)).catch(() => {});
+        }
 
         // Check if this product is already in wishlist
         const wlItems = wlRes.data?.items || wlRes.data?.wishlist || [];
@@ -191,6 +198,90 @@ export default function ProductDetail() {
             </div>
           </CardBody>
         </Card>
+
+        {/* shop info */}
+        {(shop || product?.shop_id) && (
+          <Card className="mb-6">
+            <CardBody>
+              <div className="flex items-start gap-4">
+                {/* shop image or placeholder */}
+                {shop?.image_url ? (
+                  <img src={shop.image_url} alt={shop.name}
+                    className="w-20 h-20 rounded-xl object-cover flex-shrink-0 border border-stone-200/70 dark:border-white/[0.08]" />
+                ) : (
+                  <div className="w-20 h-20 rounded-xl flex-shrink-0 bg-stone-100 dark:bg-white/[0.04] border border-stone-200/70 dark:border-white/[0.08] flex items-center justify-center">
+                    <svg className="w-8 h-8 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l9-4 9 4v13a1 1 0 01-1 1H4a1 1 0 01-1-1V7z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
+                    </svg>
+                  </div>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[11px] uppercase tracking-wider text-muted mb-0.5">
+                        {isBangla ? 'দোকান' : 'Sold by'}
+                      </p>
+                      <h3 className="text-[16px] font-semibold text-heading truncate">
+                        {shop?.name || product?.shop_name}
+                      </h3>
+                      {shop?.category && (
+                        <span className="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-medium">
+                          {shop.category}
+                        </span>
+                      )}
+                    </div>
+
+                    <Link to={`/dashboard/shop/${product?.shop_id}`}
+                      className="flex-shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2 text-[12px] font-semibold text-white hover:opacity-90 transition">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 7l9-4 9 4v13a1 1 0 01-1 1H4a1 1 0 01-1-1V7z" />
+                      </svg>
+                      {isBangla ? 'দোকান দেখুন' : 'Visit Shop'}
+                    </Link>
+                  </div>
+
+                  {/* rating */}
+                  {shop?.rating_average ? (
+                    <div className="mt-2 flex items-center gap-1">
+                      {[1,2,3,4,5].map(star => (
+                        <svg key={star} className={`w-3.5 h-3.5 ${
+                          star <= Math.round(shop.rating_average)
+                            ? 'text-gold' : 'text-stone-300 dark:text-white/15'
+                        }`} fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      ))}
+                      <span className="text-[12px] text-muted ml-1">{shop.rating_average.toFixed(1)}</span>
+                    </div>
+                  ) : null}
+
+                  {/* description */}
+                  {shop?.description && (
+                    <p className="mt-2 text-[12px] text-body line-clamp-2 leading-relaxed">{shop.description}</p>
+                  )}
+
+                  {/* address */}
+                  {shop?.address && (() => {
+                    const addr = typeof shop.address === 'string'
+                      ? shop.address
+                      : [shop.address.street, shop.address.city, shop.address.state].filter(Boolean).join(', ');
+                    return addr ? (
+                      <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted">
+                        <svg className="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        {addr}
+                      </p>
+                    ) : null;
+                  })()}
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+        )}
 
         {/* wishlist */}
         <Card className="mb-6">
