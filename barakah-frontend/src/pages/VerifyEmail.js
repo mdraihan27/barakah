@@ -12,7 +12,7 @@ import PageShell from '../components/common/PageShell';
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const { isBangla } = useLanguage();
-  const { loading: authLoading, isAuthenticated, refreshUser } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth();
   const t = useMemo(() => (isBangla ? T.bn : T.en), [isBangla]);
 
   const [params] = useSearchParams();
@@ -22,7 +22,11 @@ export default function VerifyEmail() {
   const [resending, setResending] = useState(false);
   const [verified, setVerified] = useState(false);
 
-
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -35,9 +39,6 @@ export default function VerifyEmail() {
       await authAPI.verifyEmail(email, code);
       setVerified(true);
       toast.success(isBangla ? 'ইমেইল ভেরিফাই হয়েছে!' : 'Email verified!');
-      if (isAuthenticated && refreshUser) {
-        await refreshUser();
-      }
     } catch (err) {
       const msg = err.response?.data?.detail;
       toast.error(typeof msg === 'string' ? msg : 'Verification failed');
@@ -81,7 +82,7 @@ export default function VerifyEmail() {
                   </h1>
                   <p className="mt-2 text-[14px] text-body max-w-xl leading-relaxed">
                     {verified
-                      ? (isBangla ? 'আপনার ইমেইল সফলভাবে ভেরিফাই হয়েছে।' : 'Your email has been successfully verified.')
+                      ? (isBangla ? 'আপনার ইমেইল সফলভাবে ভেরিফাই হয়েছে। এখন লগ ইন করতে পারেন।' : 'Your email has been verified. You can now log in.')
                       : (isBangla ? 'আপনার ইমেইলে একটি ৬ সংখ্যার কোড পাঠানো হয়েছে।' : 'A 6-digit code has been sent to your email.')}
                   </p>
                   {email && !verified && (
@@ -136,9 +137,9 @@ export default function VerifyEmail() {
                 </form>
               ) : (
                 <div className="mt-8">
-                  <Link to={isAuthenticated ? "/dashboard" : "/login"}
+                  <Link to="/login"
                     className="inline-flex items-center gap-2 group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-8 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all hover:shadow-emerald-500/20">
-                    <span className="relative z-10">{isAuthenticated ? (isBangla ? 'ড্যাশবোর্ডে যান' : 'Go to Dashboard') : t.actionLogin}</span>
+                    <span className="relative z-10">{t.actionLogin}</span>
                   </Link>
                 </div>
               )}

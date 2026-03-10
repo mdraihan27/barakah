@@ -145,8 +145,8 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(async (data) => {
     const res = await authAPI.signup(data);
-    setTokens(res.data.tokens);
-    setUser(res.data.user);
+    // Do NOT set tokens or user here — user must verify email before logging in.
+    // Just return the response so the caller can navigate to /verify-email.
     return res.data;
   }, []);
 
