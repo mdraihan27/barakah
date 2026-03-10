@@ -91,7 +91,7 @@ export default function PublicShopDetail() {
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 {shop.image_url && (
-                  <img src={shop.image_url} alt={shop.name} className="mb-3 h-44 w-full max-w-xl rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                  <img src={shop.image_url} alt={shop.name} className="mb-3 h-44 w-full max-w-3xl rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
                 )}
                 <h1 className="text-[20px] font-semibold text-heading">{shop.name}</h1>
                 <div className="mt-1 flex items-center gap-2 flex-wrap">
