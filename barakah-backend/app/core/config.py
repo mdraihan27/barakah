@@ -3,9 +3,9 @@ Application configuration loaded from environment variables.
 Uses pydantic-settings for validation and type coercion.
 """
 
-import json
 from functools import lru_cache
-from typing import List
+import json
+from typing import Any, List
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
@@ -53,7 +53,11 @@ class Settings(BaseSettings):
     RESET_CODE_EXPIRE_MINUTES: int = 15
 
     # ── CORS ─────────────────────────────────────────────────────────────
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://barakah-platform.vercel.app",
+    ]
     CORS_ORIGIN_REGEX: str | None = None
 
     # ── Uploads ──────────────────────────────────────────────────────────
@@ -67,55 +71,43 @@ class Settings(BaseSettings):
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def parse_cors_origins(cls, value):
-        """Support JSON arrays, comma-separated strings, and normalized origins."""
-        if value is None or value == "":
-            return []
-
-        if isinstance(value, list):
-            return [cls._normalize_origin(origin) for origin in value if cls._normalize_origin(origin)]
-
+    def parse_cors_origins(cls, value: Any) -> List[str] | Any:
+        """
+        Accept both JSON-array and comma-separated env formats.
+        This is useful for platforms where list env vars are injected as plain strings.
+        """
         if isinstance(value, str):
-            raw = value.strip()
-            if not raw:
+            text = value.strip()
+            if not text:
                 return []
 
-            if raw.startswith("["):
+            if text.startswith("["):
                 try:
-                    parsed = json.loads(raw)
+                    parsed = json.loads(text)
                 except json.JSONDecodeError:
-                    parsed = [item.strip() for item in raw.split(",")]
-            else:
-                parsed = [item.strip() for item in raw.split(",")]
+                    parsed = []
+                if isinstance(parsed, list):
+                    return parsed
 
-            if isinstance(parsed, list):
-                normalized = []
-                for origin in parsed:
-                    cleaned = cls._normalize_origin(origin)
-                    if cleaned:
-                        normalized.append(cleaned)
-                return normalized
+            return [item.strip() for item in text.split(",") if item.strip()]
 
-        raise ValueError("Invalid CORS_ORIGINS format")
+        return value
+
+    @field_validator("CORS_ORIGINS")
+    @classmethod
+    def normalize_cors_origins(cls, value: List[str]) -> List[str]:
+        # Normalize trailing slashes to avoid origin string mismatches.
+        return [origin.strip().rstrip("/") for origin in value if origin and origin.strip()]
 
     @field_validator("CORS_ORIGIN_REGEX", mode="before")
     @classmethod
-    def normalize_cors_origin_regex(cls, value):
+    def normalize_cors_origin_regex(cls, value: Any) -> str | None:
         if value is None:
             return None
         if isinstance(value, str):
             cleaned = value.strip()
             return cleaned or None
-        return value
-
-    @staticmethod
-    def _normalize_origin(origin: str | None) -> str | None:
-        if not isinstance(origin, str):
-            return None
-        cleaned = origin.strip().strip('"').strip("'")
-        if not cleaned:
-            return None
-        return cleaned.rstrip("/")
+        return None
 
 
 @lru_cache()

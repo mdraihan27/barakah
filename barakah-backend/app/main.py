@@ -53,6 +53,7 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Run setup on startup, teardown on shutdown."""
     logger.info("Starting %s v%s (%s)", settings.APP_NAME, settings.APP_VERSION, settings.APP_ENV)
+    logger.info("CORS allowed origins: %s", settings.CORS_ORIGINS)
 
     # Startup — connect to MongoDB
     await connect_to_mongo()
