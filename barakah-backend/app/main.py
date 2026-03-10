@@ -5,7 +5,6 @@ Sets up middleware, lifespan events, background tasks, and route registration.
 
 import asyncio
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import get_settings
 from app.core.database import close_mongo_connection, connect_to_mongo, get_database
 from app.core.logging import get_logger, setup_logging
+from app.utils.file_upload import get_upload_storage_dir
 
 # ── Domain repositories (for index setup) ───────────────────────────────────
 from app.repositories.user_repository import UserRepository
@@ -53,7 +53,6 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Run setup on startup, teardown on shutdown."""
     logger.info("Starting %s v%s (%s)", settings.APP_NAME, settings.APP_VERSION, settings.APP_ENV)
-    logger.info("CORS allowed origins: %s", settings.CORS_ORIGINS)
 
     # Startup — connect to MongoDB
     await connect_to_mongo()
@@ -117,7 +116,6 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=settings.CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -137,7 +135,7 @@ app.include_router(notifications.router, prefix=_API_PREFIX)
 app.include_router(chat.router, prefix=_API_PREFIX)
 app.include_router(uploads.router, prefix=_API_PREFIX)
 
-upload_dir = Path(settings.UPLOAD_DIR)
+upload_dir = get_upload_storage_dir()
 upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount(f"/{settings.UPLOAD_DIR}", StaticFiles(directory=str(upload_dir)), name="uploads")
 

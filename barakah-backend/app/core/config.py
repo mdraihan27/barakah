@@ -4,10 +4,8 @@ Uses pydantic-settings for validation and type coercion.
 """
 
 from functools import lru_cache
-import json
-from typing import Any, List
+from typing import List
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -53,12 +51,7 @@ class Settings(BaseSettings):
     RESET_CODE_EXPIRE_MINUTES: int = 15
 
     # ── CORS ─────────────────────────────────────────────────────────────
-    CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "https://barakah-platform.vercel.app",
-    ]
-    CORS_ORIGIN_REGEX: str | None = None
+    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
 
     # ── Uploads ──────────────────────────────────────────────────────────
     UPLOAD_DIR: str = "uploads"
@@ -68,46 +61,6 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
-
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, value: Any) -> List[str] | Any:
-        """
-        Accept both JSON-array and comma-separated env formats.
-        This is useful for platforms where list env vars are injected as plain strings.
-        """
-        if isinstance(value, str):
-            text = value.strip()
-            if not text:
-                return []
-
-            if text.startswith("["):
-                try:
-                    parsed = json.loads(text)
-                except json.JSONDecodeError:
-                    parsed = []
-                if isinstance(parsed, list):
-                    return parsed
-
-            return [item.strip() for item in text.split(",") if item.strip()]
-
-        return value
-
-    @field_validator("CORS_ORIGINS")
-    @classmethod
-    def normalize_cors_origins(cls, value: List[str]) -> List[str]:
-        # Normalize trailing slashes to avoid origin string mismatches.
-        return [origin.strip().rstrip("/") for origin in value if origin and origin.strip()]
-
-    @field_validator("CORS_ORIGIN_REGEX", mode="before")
-    @classmethod
-    def normalize_cors_origin_regex(cls, value: Any) -> str | None:
-        if value is None:
-            return None
-        if isinstance(value, str):
-            cleaned = value.strip()
-            return cleaned or None
-        return None
 
 
 @lru_cache()

@@ -2,6 +2,7 @@
 Helpers for validating and saving uploaded image files.
 """
 
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -18,6 +19,22 @@ ALLOWED_IMAGE_CONTENT_TYPES = {
     "image/webp",
 }
 ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+
+def get_upload_storage_dir() -> Path:
+    """
+    Resolve the writable filesystem directory for uploaded files.
+
+    On Vercel, the deployment filesystem is read-only except /tmp.
+    """
+    configured_dir = Path(settings.UPLOAD_DIR)
+    if configured_dir.is_absolute():
+        return configured_dir
+
+    if os.getenv("VERCEL") == "1":
+        return Path("/tmp") / configured_dir
+
+    return configured_dir
 
 
 def _validate_image(file: UploadFile) -> str:
@@ -50,7 +67,7 @@ async def save_image(file: UploadFile, subdirectory: str) -> str:
             detail=f"Image too large. Max size is {settings.MAX_IMAGE_SIZE_MB}MB.",
         )
 
-    target_dir = Path(settings.UPLOAD_DIR) / subdirectory
+    target_dir = get_upload_storage_dir() / subdirectory
     target_dir.mkdir(parents=True, exist_ok=True)
 
     filename = f"{uuid4().hex}{extension}"
