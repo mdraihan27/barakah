@@ -3,7 +3,7 @@ Wishlist routes — /api/v1/wishlist/* endpoints.
 All endpoints require authentication.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
 from app.core.dependencies import get_current_user, get_db
 from app.core.logging import get_logger
