@@ -179,7 +179,7 @@ export default function PublicShopDetail() {
               {reviews.map((r) => (
                 <Card key={r._id}>
                   <CardBody>
-                    <StarRating value={r.rating} readOnly size="sm" />
+                    <StarRating rating={r.rating} size="sm" />
                     {r.comment && <p className="mt-1.5 text-[13px] text-body">{r.comment}</p>}
                     <p className="mt-1 text-[11px] text-muted">{r.user_name || 'User'} · {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}</p>
                   </CardBody>
@@ -194,7 +194,7 @@ export default function PublicShopDetail() {
           <div className="space-y-4">
             <div>
               <label className="block text-[12px] font-medium text-body mb-2">{isBangla ? 'রেটিং' : 'Rating'}</label>
-              <StarRating value={reviewRating} onChange={setReviewRating} size="lg" />
+              <StarRating rating={reviewRating} onChange={setReviewRating} size="lg" interactive={true} />
             </div>
             <div>
               <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'মন্তব্য' : 'Comment'}</label>

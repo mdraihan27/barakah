@@ -175,7 +175,7 @@ export default function ShopDetail() {
                   <CardBody>
                     <div className="flex items-start justify-between">
                       <div>
-                        <StarRating value={r.rating} readOnly size="sm" />
+                        <StarRating rating={r.rating} size="sm" />
                         <p className="mt-1.5 text-[13px] text-body">{r.comment}</p>
                         <p className="mt-1 text-[11px] text-muted">{r.user_name || 'Anonymous'} · {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}</p>
                       </div>

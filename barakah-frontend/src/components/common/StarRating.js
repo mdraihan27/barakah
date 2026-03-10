@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 export default function StarRating({
   rating = 0,
   total = 5,
@@ -5,22 +7,31 @@ export default function StarRating({
   interactive = false,
   onChange,
 }) {
-  const sizeMap = { xs: 'w-3 h-3', sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-6 h-6' };
+  const [hovered, setHovered] = useState(0);
+  const sizeMap = { xs: 'w-3 h-3', sm: 'w-4 h-4', md: 'w-5 h-5', lg: 'w-7 h-7' };
 
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-1">
       {Array.from({ length: total }, (_, i) => {
-        const filled = i < Math.round(rating);
+        const starIndex = i + 1;
+        const filled = starIndex <= (interactive && hovered ? hovered : Math.round(rating));
         return (
           <button
             key={i}
             type="button"
             disabled={!interactive}
-            onClick={() => interactive && onChange?.(i + 1)}
-            className={`${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'}`}
+            onClick={() => interactive && onChange?.(starIndex)}
+            onMouseEnter={() => interactive && setHovered(starIndex)}
+            onMouseLeave={() => interactive && setHovered(0)}
+            className={`${interactive ? 'cursor-pointer focus:outline-none' : 'cursor-default'} transition-transform ${interactive ? 'hover:scale-125' : ''}`}
           >
             <svg
-              className={`${sizeMap[size]} ${filled ? 'text-gold' : 'text-stone-200 dark:text-white/10'}`}
+              className={`${sizeMap[size]} transition-colors ${filled
+                  ? 'text-gold drop-shadow-[0_0_4px_rgba(212,175,55,0.5)]'
+                  : interactive
+                    ? 'text-stone-300 dark:text-white/20 hover:text-gold/50'
+                    : 'text-stone-200 dark:text-white/10'
+                }`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >
