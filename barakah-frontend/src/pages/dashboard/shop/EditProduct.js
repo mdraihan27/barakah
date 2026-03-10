@@ -17,6 +17,7 @@ export default function EditProduct() {
   const [form, setForm] = useState({ name: '', category: '', description: '', in_stock: true });
   const [existingImages, setExistingImages] = useState([]);
   const [newImages, setNewImages] = useState([]);
+  const [newImagePreviews, setNewImagePreviews] = useState([]);
   const [currentPrice, setCurrentPrice] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [shopId, setShopId] = useState('');
@@ -217,10 +218,17 @@ export default function EditProduct() {
               </div>
               <div>
                 <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'পণ্যের ছবি' : 'Product Images'}</label>
-                {existingImages.length > 0 && (
+                {(existingImages.length > 0 || newImagePreviews.length > 0) && (
                   <div className="mb-2 grid grid-cols-3 gap-2">
                     {existingImages.slice(0, 3).map((url) => (
-                      <img key={url} src={url} alt={form.name || 'product'} className="h-20 w-full rounded-lg object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                      <div key={url} className="relative">
+                        <img src={url} alt={form.name || 'product'} className="h-20 w-full rounded-lg object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                      </div>
+                    ))}
+                    {newImagePreviews.map((url, idx) => (
+                      <div key={`new-${idx}`} className="relative">
+                         <img src={url} alt="New Preview" className="h-20 w-full rounded-lg object-cover border border-2 border-emerald-500/50" />
+                      </div>
                     ))}
                   </div>
                 )}
@@ -228,7 +236,14 @@ export default function EditProduct() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   multiple
-                  onChange={(e) => setNewImages(Array.from(e.target.files || []))}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setNewImages(files);
+                    files.forEach(file => {
+                      file.preview = URL.createObjectURL(file);
+                    });
+                    setNewImagePreviews(files.map(file => file.preview));
+                  }}
                   className={fieldCls}
                 />
               </div>

@@ -21,6 +21,7 @@ export default function EditShop() {
   const [form, setForm] = useState({ name: '', description: '', category: '', address: '', latitude: '', longitude: '' });
   const [existingImageUrl, setExistingImageUrl] = useState('');
   const [shopImage, setShopImage] = useState(null);
+  const [shopImagePreview, setShopImagePreview] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -120,13 +121,23 @@ export default function EditShop() {
               </div>
               <div>
                 <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'দোকানের ছবি' : 'Shop Image'}</label>
-                {existingImageUrl && (
+                {shopImagePreview ? (
+                  <img src={shopImagePreview} alt="New Preview" className="mb-2 h-28 w-full rounded-xl object-cover border border-2 border-emerald-500/50" />
+                ) : existingImageUrl ? (
                   <img src={existingImageUrl} alt={form.name || 'shop'} className="mb-2 h-28 w-full rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
-                )}
+                ) : null}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => setShopImage(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setShopImage(file);
+                    if (file) {
+                      setShopImagePreview(URL.createObjectURL(file));
+                    } else {
+                      setShopImagePreview('');
+                    }
+                  }}
                   className={fieldCls}
                 />
               </div>

@@ -26,6 +26,7 @@ export default function CreateShop() {
   });
   const [loading, setLoading] = useState(false);
   const [shopImage, setShopImage] = useState(null);
+  const [shopImagePreview, setShopImagePreview] = useState('');
 
   const setValue = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -122,10 +123,21 @@ export default function CreateShop() {
 
               <div>
                 <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'দোকানের ছবি' : 'Shop Image'}</label>
+                {shopImagePreview && (
+                  <img src={shopImagePreview} alt="Shop Preview" className="mb-2 h-28 w-full rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                )}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) => setShopImage(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setShopImage(file);
+                    if (file) {
+                      setShopImagePreview(URL.createObjectURL(file));
+                    } else {
+                      setShopImagePreview('');
+                    }
+                  }}
                   className={fieldCls}
                 />
               </div>

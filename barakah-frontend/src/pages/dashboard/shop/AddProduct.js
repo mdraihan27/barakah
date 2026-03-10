@@ -19,6 +19,7 @@ export default function AddProduct() {
     name: '', category: '', description: '', price: '', in_stock: true,
   });
   const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [nameOptions, setNameOptions] = useState([]);
@@ -186,11 +187,26 @@ export default function AddProduct() {
 
               <div>
                 <label className="block text-[12px] font-medium text-body mb-1.5">{isBangla ? 'পণ্যের ছবি' : 'Product Images'}</label>
+                {imagePreviews.length > 0 && (
+                  <div className="mb-2 grid grid-cols-3 gap-2">
+                    {imagePreviews.map((url, idx) => (
+                      <img key={idx} src={url} alt="Preview" className="h-20 w-full rounded-lg object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                    ))}
+                  </div>
+                )}
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   multiple
-                  onChange={(e) => setImages(Array.from(e.target.files || []))}
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    setImages(files);
+                    // Generate preview URLs
+                    files.forEach(file => {
+                      file.preview = URL.createObjectURL(file);
+                    });
+                    setImagePreviews(files.map(file => file.preview));
+                  }}
                   className={fieldCls}
                 />
               </div>
