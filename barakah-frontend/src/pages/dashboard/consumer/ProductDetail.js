@@ -11,6 +11,7 @@ import LoadingSpinner from '../../../components/common/LoadingSpinner';
 import { getApiErrorMessage } from '../../../utils/apiError';
 
 const EXPLORE_LOCATION_STORAGE_KEY = 'barakah-explore-location';
+const RECENTLY_VIEWED_STORAGE_KEY = 'barakah-recently-viewed';
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -38,6 +39,33 @@ export default function ProductDetail() {
         ]);
         setProduct(pRes.data);
         setPriceHistory(normalizePriceHistory(phRes.data));
+
+        // Track recently viewed
+        if (pRes.data) {
+          try {
+            const raw = localStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY);
+            let recent = raw ? JSON.parse(raw) : [];
+            // Remove if already exists
+            const productId = pRes.data._id || pRes.data.id;
+            recent = recent.filter(p => (p._id || p.id) !== productId);
+            // Prepend new product
+            recent.unshift({
+              _id: productId,
+              name: pRes.data.name,
+              category: pRes.data.category,
+              current_price: pRes.data.current_price ?? pRes.data.price,
+              unit: pRes.data.unit,
+              in_stock: pRes.data.stock_quantity > 0,
+              images: pRes.data.images,
+              shop_name: pRes.data.shop_name,
+            });
+            // Keep only latest 20
+            if (recent.length > 20) recent = recent.slice(0, 20);
+            localStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(recent));
+          } catch (e) {
+            console.error('Failed to save recently viewed', e);
+          }
+        }
       } catch {
         toast.error('Product not found');
         navigate(-1);

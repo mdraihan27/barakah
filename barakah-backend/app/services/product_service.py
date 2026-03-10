@@ -139,6 +139,19 @@ class ProductService:
         total = await self.product_repo.count_by_shop(shop_id)
         return {"products": products, "total": total}
 
+    async def get_recent_owner_products(self, owner_id: str, limit: int = 20) -> dict:
+        """Get the most recently added products across all of a user's shops."""
+        # Find all shops for the owner
+        shops = await self.shop_repo.find_by_owner(owner_id)
+        if not shops:
+            return {"products": [], "total": 0}
+
+        shop_ids = [shop["_id"] for shop in shops]
+        
+        # Get recent products across those shops
+        products = await self.product_repo.get_recent_by_shops(shop_ids, limit=limit)
+        return {"products": products, "total": len(products)}
+
     async def get_price_history(self, product_id: str) -> dict:
         """Get the price history for a product."""
         await self._get_product_or_404(product_id)

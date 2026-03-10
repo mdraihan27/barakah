@@ -25,4 +25,5 @@ export const productsAPI = {
   getProductsByShop: (shopId, skip = 0, limit = 50) =>
     API.get(`/products/shop/${shopId}`, { params: { skip, limit } }),
   getPriceHistory: (productId) => API.get(`/products/${productId}/price-history`),
+  getRecentOwnerProducts: (limit = 20) => API.get('/products/owner/recent', { params: { limit } }),
 };

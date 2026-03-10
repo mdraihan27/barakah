@@ -63,6 +63,20 @@ class ProductRepository:
         """Count products in a shop."""
         return await self.collection.count_documents({"shop_id": shop_id})
 
+    async def get_recent_by_shops(self, shop_ids: List[str], limit: int = 20) -> List[dict]:
+        """Fetch the most recently created products from a list of shops."""
+        cursor = (
+            self.collection.find({"shop_id": {"$in": shop_ids}})
+            .sort("created_at", -1)
+            .limit(limit)
+        )
+        products = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            products.append(doc)
+        logger.debug("Found %d recent products across %d shops", len(products), len(shop_ids))
+        return products
+
     async def search_by_name(self, query: str, limit: int = 50) -> List[dict]:
         """
         Full-text search on product name using MongoDB text index.

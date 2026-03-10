@@ -6,6 +6,7 @@ import { shopsAPI } from '../../api/shops';
 import { notificationsAPI } from '../../api/notifications';
 import { wishlistAPI } from '../../api/wishlist';
 import { chatAPI } from '../../api/chat';
+import { productsAPI } from '../../api/products';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -17,6 +18,8 @@ export default function Dashboard() {
   const { isBangla } = useLanguage();
   const [stats, setStats] = useState({ shops: 0, notifications: 0, unread: 0, wishlist: 0, conversations: 0 });
   const [loading, setLoading] = useState(true);
+  const [recentProducts, setRecentProducts] = useState([]);
+  const [recentLoading, setRecentLoading] = useState(true);
 
   useEffect(() => {
     const needsRoleSelection = sessionStorage.getItem('barakah-needs-role-selection') === '1';
@@ -52,7 +55,26 @@ export default function Dashboard() {
         setLoading(false);
       }
     };
+
+    const fetchRecentItems = async () => {
+      try {
+        if (isShopOwner) {
+          const res = await productsAPI.getRecentOwnerProducts(15);
+          setRecentProducts(res.data?.products || []);
+        } else {
+          const raw = localStorage.getItem('barakah-recently-viewed');
+          const viewed = raw ? JSON.parse(raw) : [];
+          setRecentProducts(viewed);
+        }
+      } catch {
+        setRecentProducts([]);
+      } finally {
+        setRecentLoading(false);
+      }
+    };
+
     fetchStats();
+    fetchRecentItems();
   }, [isShopOwner]);
 
   const greeting = isBangla
@@ -159,12 +181,11 @@ export default function Dashboard() {
                           {card.value}{card.suffix || ''}
                         </p>
                       </div>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
-                        card.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-500/[0.08] text-emerald-600 dark:text-emerald-400' :
-                        card.color === 'gold' ? 'bg-amber-50 dark:bg-gold/10 text-gold' :
-                        card.color === 'blue' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
-                        'bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400'
-                      }`}>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${card.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-500/[0.08] text-emerald-600 dark:text-emerald-400' :
+                          card.color === 'gold' ? 'bg-amber-50 dark:bg-gold/10 text-gold' :
+                            card.color === 'blue' ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                              'bg-red-50 dark:bg-red-500/10 text-red-500 dark:text-red-400'
+                        }`}>
                         {card.icon}
                       </div>
                     </div>
@@ -216,6 +237,54 @@ export default function Dashboard() {
           <Badge color={isShopOwner ? 'emerald' : 'gold'}>
             {isShopOwner ? (isBangla ? 'দোকানদার' : 'Shop Owner') : (isBangla ? 'ক্রেতা' : 'Consumer')}
           </Badge>
+        </div>
+
+        {/* recent products */}
+        <div className="mt-12">
+          <h2 className="text-[16px] font-semibold text-heading mb-4">
+            {isShopOwner
+              ? (isBangla ? 'সর্বশেষ যুক্ত করা পণ্য' : 'Last Added Products')
+              : (isBangla ? 'সম্প্রতি দেখা পণ্য' : 'Recently Viewed Products')}
+          </h2>
+          {recentLoading ? (
+            <div className="py-8"><LoadingSpinner /></div>
+          ) : recentProducts.length === 0 ? (
+            <div className="rounded-xl border border-stone-200/70 dark:border-white/[0.08] p-6 text-center text-sm text-muted">
+              {isBangla ? 'কোন পণ্য নেই' : 'No products found'}
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto custom-scrollbar pb-4 snap-x">
+              {recentProducts.map(p => (
+                <Link key={p._id || p.id} to={`/dashboard/products/${p._id || p.id}`} className="block flex-shrink-0 w-[180px] sm:w-[220px] snap-center">
+                  <Card className="h-full hover:shadow-lg transition-shadow">
+                    <CardBody className="p-4">
+                      {Array.isArray(p.images) && p.images[0] ? (
+                        <img src={p.images[0]} alt={p.name} className="h-32 w-full object-cover rounded-lg mb-3 border border-stone-200/70 dark:border-white/[0.08]" />
+                      ) : (
+                        <div className="h-32 w-full rounded-lg bg-stone-100 dark:bg-white/[0.04] mb-3 flex items-center justify-center border border-stone-200/70 dark:border-white/[0.08]">
+                          <span className="text-[11px] text-muted">{isBangla ? 'ছবি নেই' : 'No image'}</span>
+                        </div>
+                      )}
+                      <h3 className="text-[13px] font-semibold text-heading truncate">{p.name}</h3>
+                      <div className="mt-2 flex items-baseline gap-1">
+                        <span className="text-[16px] font-bold text-emerald-600 dark:text-emerald-400">
+                          ৳{p.current_price ?? p.price ?? '—'}
+                        </span>
+                        {p.unit && <span className="text-[10px] text-muted">/{p.unit}</span>}
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-stone-100 dark:border-white/[0.04]">
+                        {p.in_stock === false ? (
+                          <span className="text-[10px] font-medium text-red-500">{isBangla ? 'স্টক নেই' : 'Out of Stock'}</span>
+                        ) : (
+                          <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">{isBangla ? 'স্টকে আছে' : 'In Stock'}</span>
+                        )}
+                      </div>
+                    </CardBody>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

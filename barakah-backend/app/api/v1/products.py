@@ -182,6 +182,29 @@ async def update_product_price(
 
 
 # =============================================================================
+# Get Recent Products for Owner (shop_owner / admin only)
+# =============================================================================
+
+@router.get(
+    "/owner/recent",
+    response_model=ProductListResponse,
+    summary="List recently added products for all shops owned by user",
+)
+async def get_owner_recent_products(
+    limit: int = Query(20, ge=1, le=100),
+    current_user: dict = Depends(require_role("shop_owner", "admin")),
+    service: ProductService = Depends(_product_service),
+):
+    """Get the most recently created products for the authenticated shop owner."""
+    logger.info("GET /products/owner/recent — user %s", current_user["_id"])
+    result = await service.get_recent_owner_products(current_user["_id"], limit=limit)
+    return ProductListResponse(
+        products=[ProductResponse(**p) for p in result["products"]],
+        total=result["total"],
+    )
+
+
+# =============================================================================
 # Get Products by Shop (public)
 # =============================================================================
 
