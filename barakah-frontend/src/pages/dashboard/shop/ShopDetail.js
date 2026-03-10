@@ -56,7 +56,7 @@ export default function ShopDetail() {
         {/* shop header */}
         <Card className="mb-6">
           <CardBody>
-            <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)_auto] gap-5 lg:gap-6 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-[480px_minmax(0,1fr)_auto] gap-5 lg:gap-6 items-start">
               <div>
                 {shop.image_url ? (
                   <img src={shop.image_url} alt={shop.name} className="h-48 lg:h-52 w-full rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
