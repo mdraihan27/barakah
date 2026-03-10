@@ -3,9 +3,11 @@ Application configuration loaded from environment variables.
 Uses pydantic-settings for validation and type coercion.
 """
 
+import json
 from functools import lru_cache
-from typing import List
+from typing import Any, List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -52,6 +54,39 @@ class Settings(BaseSettings):
 
     # ── CORS ─────────────────────────────────────────────────────────────
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def normalize_cors_origins(cls, value: Any) -> List[str]:
+        """
+        Normalize CORS origins from env and remove trailing slashes.
+
+        FastAPI's CORS origin matching is exact; trailing slashes cause mismatches.
+        """
+        origins: list[str]
+
+        if isinstance(value, str):
+            text = value.strip()
+            if text.startswith("["):
+                try:
+                    parsed = json.loads(text)
+                except json.JSONDecodeError:
+                    parsed = []
+                origins = [str(item) for item in parsed]
+            else:
+                origins = [item.strip() for item in text.split(",") if item.strip()]
+        elif isinstance(value, list):
+            origins = [str(item).strip() for item in value if str(item).strip()]
+        else:
+            origins = []
+
+        normalized: list[str] = []
+        for origin in origins:
+            clean = origin.rstrip("/")
+            if clean and clean not in normalized:
+                normalized.append(clean)
+
+        return normalized
 
     # ── Uploads ──────────────────────────────────────────────────────────
     UPLOAD_DIR: str = "uploads"
