@@ -91,7 +91,7 @@ export default function PublicShopDetail() {
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 {shop.image_url && (
-                  <img src={shop.image_url} alt={shop.name} className="mb-3 h-44 w-full max-w-3xl rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                  <img src={shop.image_url} alt={shop.name} className="mb-3 h-48 lg:h-52 w-full rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
                 )}
                 <h1 className="text-[20px] font-semibold text-heading">{shop.name}</h1>
                 <div className="mt-1 flex items-center gap-2 flex-wrap">
@@ -180,7 +180,9 @@ export default function PublicShopDetail() {
                 <Card key={r._id}>
                   <CardBody>
                     <StarRating rating={r.rating} size="sm" />
-                    {r.comment && <p className="mt-1.5 text-[13px] text-body">{r.comment}</p>}
+                    {(r.comment || r.text) && (
+                      <p className="mt-1.5 text-[13px] text-body leading-relaxed">{r.comment || r.text}</p>
+                    )}
                     <p className="mt-1 text-[11px] text-muted">{r.user_name || 'User'} · {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}</p>
                   </CardBody>
                 </Card>
