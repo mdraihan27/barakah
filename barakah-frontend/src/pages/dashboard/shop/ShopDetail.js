@@ -56,13 +56,20 @@ export default function ShopDetail() {
         {/* shop header */}
         <Card className="mb-6">
           <CardBody>
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)_auto] gap-5 lg:gap-6 items-start">
               <div>
-                {shop.image_url && (
-                  <img src={shop.image_url} alt={shop.name} className="mb-3 h-44 w-full max-w-xl rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                {shop.image_url ? (
+                  <img src={shop.image_url} alt={shop.name} className="h-48 lg:h-52 w-full rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
+                ) : (
+                  <div className="h-48 lg:h-52 w-full rounded-xl border border-stone-200/70 dark:border-white/[0.08] bg-stone-100/70 dark:bg-white/[0.04] flex items-center justify-center text-[12px] text-muted">
+                    {isBangla ? 'ছবি নেই' : 'No image'}
+                  </div>
                 )}
-                <h1 className="text-[20px] font-semibold text-heading">{shop.name}</h1>
-                <div className="mt-1 flex items-center gap-2">
+              </div>
+
+              <div className="min-w-0">
+                <h1 className="text-[20px] font-semibold text-heading break-words">{shop.name}</h1>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
                   {shop.category && <Badge color="emerald">{shop.category}</Badge>}
                   {shop.rating_average ? (
                     <span className="flex items-center gap-1 text-[12px] text-muted">
@@ -71,26 +78,29 @@ export default function ShopDetail() {
                     </span>
                   ) : null}
                 </div>
-                {shop.description && <p className="mt-2 text-[13px] text-body">{shop.description}</p>}
+
+                {shop.description && <p className="mt-3 text-[13px] text-body leading-relaxed">{shop.description}</p>}
+
                 {shop.address && (() => {
                   const addr = typeof shop.address === 'string'
                     ? shop.address
                     : [shop.address.street, shop.address.city, shop.address.state, shop.address.country].filter(Boolean).join(', ');
                   return addr ? (
-                    <p className="mt-1 text-[12px] text-muted flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                      {addr}
+                    <p className="mt-2 text-[12px] text-muted flex items-start gap-1.5">
+                      <svg className="w-3.5 h-3.5 mt-[2px] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                      <span className="break-words">{addr}</span>
                     </p>
                   ) : null;
                 })()}
               </div>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2 lg:flex-col w-full lg:w-auto lg:min-w-[140px]">
                 <Link to={`/dashboard/shops/${id}/edit`}
-                  className="rounded-xl border border-stone-200/70 dark:border-white/[0.08] px-4 py-2 text-[12px] font-medium text-body hover:bg-stone-50 dark:hover:bg-white/[0.03] transition">
+                  className="flex-1 lg:flex-none text-center rounded-xl border border-stone-200/70 dark:border-white/[0.08] px-4 py-2 text-[12px] font-medium text-body hover:bg-stone-50 dark:hover:bg-white/[0.03] transition">
                   {isBangla ? 'সম্পাদনা' : 'Edit'}
                 </Link>
                 <Link to={`/dashboard/shops/${id}/products/add`}
-                  className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2 text-[12px] font-semibold text-white">
+                  className="flex-1 lg:flex-none text-center rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2 text-[12px] font-semibold text-white">
                   {isBangla ? 'পণ্য যুক্ত' : 'Add Product'}
                 </Link>
               </div>
