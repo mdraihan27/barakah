@@ -3,9 +3,11 @@ Application configuration loaded from environment variables.
 Uses pydantic-settings for validation and type coercion.
 """
 
+import json
 from functools import lru_cache
 from typing import List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -52,6 +54,7 @@ class Settings(BaseSettings):
 
     # ── CORS ─────────────────────────────────────────────────────────────
     CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGIN_REGEX: str | None = None
 
     # ── Uploads ──────────────────────────────────────────────────────────
     UPLOAD_DIR: str = "uploads"
@@ -61,6 +64,58 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, value):
+        """Support JSON arrays, comma-separated strings, and normalized origins."""
+        if value is None or value == "":
+            return []
+
+        if isinstance(value, list):
+            return [cls._normalize_origin(origin) for origin in value if cls._normalize_origin(origin)]
+
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+
+            if raw.startswith("["):
+                try:
+                    parsed = json.loads(raw)
+                except json.JSONDecodeError:
+                    parsed = [item.strip() for item in raw.split(",")]
+            else:
+                parsed = [item.strip() for item in raw.split(",")]
+
+            if isinstance(parsed, list):
+                normalized = []
+                for origin in parsed:
+                    cleaned = cls._normalize_origin(origin)
+                    if cleaned:
+                        normalized.append(cleaned)
+                return normalized
+
+        raise ValueError("Invalid CORS_ORIGINS format")
+
+    @field_validator("CORS_ORIGIN_REGEX", mode="before")
+    @classmethod
+    def normalize_cors_origin_regex(cls, value):
+        if value is None:
+            return None
+        if isinstance(value, str):
+            cleaned = value.strip()
+            return cleaned or None
+        return value
+
+    @staticmethod
+    def _normalize_origin(origin: str | None) -> str | None:
+        if not isinstance(origin, str):
+            return None
+        cleaned = origin.strip().strip('"').strip("'")
+        if not cleaned:
+            return None
+        return cleaned.rstrip("/")
 
 
 @lru_cache()
