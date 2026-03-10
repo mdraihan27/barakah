@@ -3,7 +3,7 @@ Wishlist routes — /api/v1/wishlist/* endpoints.
 All endpoints require authentication.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
 
 from app.core.dependencies import get_current_user, get_db
 from app.core.logging import get_logger
@@ -33,8 +33,7 @@ def _wishlist_service(db=Depends(get_db)) -> WishlistService:
 @router.post(
     "",
     response_model=WishlistItemResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="Add item to wishlist",
+    summary="Add or update item in wishlist",
 )
 async def add_to_wishlist(
     body: WishlistItemCreateRequest,

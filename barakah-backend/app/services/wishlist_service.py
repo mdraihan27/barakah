@@ -3,8 +3,6 @@ Wishlist service — business logic for user wishlists.
 Prevents duplicates by product name (case-insensitive).
 """
 
-from fastapi import HTTPException, status
-
 from app.core.logging import get_logger
 from app.repositories.wishlist_repository import WishlistRepository
 
@@ -18,18 +16,32 @@ class WishlistService:
         self.wishlist_repo = wishlist_repo
 
     async def add_item(self, user: dict, data: dict) -> dict:
-        """Add a product to the user's wishlist. Prevents duplicates."""
+        """Add or update a product in the user's wishlist (upsert by product name)."""
         user_id = user["_id"]
         product_name = data["product_name"]
 
-        # Check for duplicate
+        # Check for existing item — if found, update its target price and re-use it
         existing = await self.wishlist_repo.find_by_user_and_product(user_id, product_name)
         if existing:
-            logger.info("Duplicate wishlist item: user %s, product '%s'", user_id, product_name)
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="This product is already in your wishlist.",
-            )
+            update_fields = {}
+            if data.get("target_price") is not None:
+                update_fields["target_price"] = data["target_price"]
+            if data.get("baseline_price") is not None:
+                update_fields["baseline_price"] = data["baseline_price"]
+            if data.get("source_product_id"):
+                update_fields["source_product_id"] = data["source_product_id"]
+            if data.get("source_shop_id"):
+                update_fields["source_shop_id"] = data["source_shop_id"]
+            if data.get("user_lat") is not None:
+                update_fields["user_lat"] = data["user_lat"]
+            if data.get("user_lng") is not None:
+                update_fields["user_lng"] = data["user_lng"]
+
+            if update_fields:
+                await self.wishlist_repo.update_by_id(existing["_id"], update_fields)
+                existing.update(update_fields)
+            logger.info("Wishlist item updated: user %s, product '%s'", user_id, product_name)
+            return existing
 
         item_doc = {
             "user_id": user_id,

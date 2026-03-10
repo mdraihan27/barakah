@@ -22,6 +22,7 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [targetPrice, setTargetPrice] = useState('');
+  const [existingWishlistItem, setExistingWishlistItem] = useState(null);
 
   const normalizePriceHistory = (payload) => {
     if (Array.isArray(payload?.history)) return payload.history;
@@ -33,22 +34,31 @@ export default function ProductDetail() {
   useEffect(() => {
     (async () => {
       try {
-        const [pRes, phRes] = await Promise.all([
+        const [pRes, phRes, wlRes] = await Promise.all([
           productsAPI.getProduct(id),
           productsAPI.getPriceHistory(id).catch(() => ({ data: [] })),
+          wishlistAPI.getWishlist().catch(() => ({ data: { items: [] } })),
         ]);
         setProduct(pRes.data);
         setPriceHistory(normalizePriceHistory(phRes.data));
+
+        // Check if this product is already in wishlist
+        const wlItems = wlRes.data?.items || wlRes.data?.wishlist || [];
+        const productId = pRes.data._id || pRes.data.id;
+        const existing = wlItems.find(
+          (w) => w.source_product_id === productId
+        );
+        if (existing) {
+          setExistingWishlistItem(existing);
+          setTargetPrice(existing.target_price != null ? String(existing.target_price) : '');
+        }
 
         // Track recently viewed
         if (pRes.data) {
           try {
             const raw = localStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY);
             let recent = raw ? JSON.parse(raw) : [];
-            // Remove if already exists
-            const productId = pRes.data._id || pRes.data.id;
             recent = recent.filter(p => (p._id || p.id) !== productId);
-            // Prepend new product
             recent.unshift({
               _id: productId,
               name: pRes.data.name,
@@ -59,7 +69,6 @@ export default function ProductDetail() {
               images: pRes.data.images,
               shop_name: pRes.data.shop_name,
             });
-            // Keep only latest 20
             if (recent.length > 20) recent = recent.slice(0, 20);
             localStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(recent));
           } catch (e) {
@@ -74,9 +83,16 @@ export default function ProductDetail() {
   }, [id, navigate]);
 
   const addToWishlist = async () => {
+    const parsedTargetPrice = targetPrice !== '' ? parseFloat(targetPrice) : undefined;
+
+    // Require target price
+    if (!Number.isFinite(parsedTargetPrice) || parsedTargetPrice <= 0) {
+      toast.error(isBangla ? 'একটি টার্গেট মূল্য দিন' : 'Please enter a target price');
+      return;
+    }
+
     setAdding(true);
     try {
-      const parsedTargetPrice = targetPrice !== '' ? parseFloat(targetPrice) : undefined;
       let userLat;
       let userLng;
 
@@ -97,7 +113,7 @@ export default function ProductDetail() {
 
       await wishlistAPI.addItem({
         product_name: product?.name,
-        target_price: Number.isFinite(parsedTargetPrice) ? parsedTargetPrice : undefined,
+        target_price: parsedTargetPrice,
         baseline_price: Number.isFinite(price) && price > 0 ? price : undefined,
         source_product_id: product?._id || product?.id,
         source_shop_id: product?.shop_id,
@@ -105,7 +121,14 @@ export default function ProductDetail() {
         user_lng: userLng,
         radius_km: 10,
       });
-      toast.success(isBangla ? 'উইশলিস্টে যুক্ত হয়েছে!' : 'Added to wishlist!');
+
+      const isUpdate = !!existingWishlistItem;
+      setExistingWishlistItem({ ...(existingWishlistItem || {}), target_price: parsedTargetPrice });
+      toast.success(
+        isUpdate
+          ? (isBangla ? 'উইশলিস্ট আপডেট হয়েছে!' : 'Wishlist updated!')
+          : (isBangla ? 'উইশলিস্টে যুক্ত হয়েছে!' : 'Added to wishlist!')
+      );
     } catch (err) {
       toast.error(getApiErrorMessage(err, 'Failed'));
     } finally { setAdding(false); }
@@ -122,6 +145,8 @@ export default function ProductDetail() {
   const minPrice = prices.length ? Math.min(...prices) : null;
   const maxPrice = prices.length ? Math.max(...prices) : null;
   const avgPrice = prices.length ? (prices.reduce((a, b) => a + b, 0) / prices.length) : null;
+
+  const isInWishlist = !!existingWishlistItem;
 
   return (
     <DashboardLayout>
@@ -170,22 +195,41 @@ export default function ProductDetail() {
         {/* wishlist */}
         <Card className="mb-6">
           <CardBody>
-            <h3 className="text-[14px] font-semibold text-heading mb-3">
-              {isBangla ? 'উইশলিস্টে যুক্ত করুন' : 'Add to Wishlist'}
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[14px] font-semibold text-heading">
+                {isInWishlist
+                  ? (isBangla ? 'উইশলিস্ট আপডেট করুন' : 'Update Wishlist')
+                  : (isBangla ? 'উইশলিস্টে যুক্ত করুন' : 'Add to Wishlist')}
+              </h3>
+              {isInWishlist && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.2 7.2a1 1 0 01-1.42 0l-3.6-3.6a1 1 0 111.42-1.42l2.89 2.89 6.49-6.49a1 1 0 011.42 0z" clipRule="evenodd" /></svg>
+                  {isBangla ? 'উইশলিস্টে আছে' : 'In wishlist'}
+                </span>
+              )}
+            </div>
+
+            {isInWishlist && existingWishlistItem?.target_price != null && (
+              <p className="text-[12px] text-muted mb-3">
+                {isBangla ? 'বর্তমান টার্গেট: ' : 'Current target: '}
+                <span className="font-semibold text-gold">৳{existingWishlistItem.target_price}</span>
+              </p>
+            )}
+
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <label className="block text-[12px] text-muted mb-1.5">
-                  {isBangla ? 'টার্গেট মূল্য (ঐচ্ছিক)' : 'Target price (optional)'}
+                  {isBangla ? 'টার্গেট মূল্য *' : 'Target price *'}
                 </label>
                 <input value={targetPrice} onChange={(e) => setTargetPrice(e.target.value)}
-                  type="number" step="0.01" min="0" placeholder={`current: ৳${price}`}
+                  type="number" step="0.01" min="0.01" required
+                  placeholder={`e.g. ৳${Math.round(price * 0.9) || price}`}
                   className="w-full max-w-[200px] rounded-xl bg-white/80 dark:bg-white/[0.04] border border-stone-200/70 dark:border-white/[0.08] px-4 py-2.5 text-[14px] text-heading dark:text-white placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
               </div>
-              <button onClick={addToWishlist} disabled={adding}
+              <button onClick={addToWishlist} disabled={adding || !targetPrice}
                 className="rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-2.5 text-[13px] font-semibold text-white disabled:opacity-60 flex items-center gap-1.5">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                {adding ? '...' : (isBangla ? 'যুক্ত করুন' : 'Add')}
+                {adding ? '...' : isInWishlist ? (isBangla ? 'আপডেট করুন' : 'Update') : (isBangla ? 'যুক্ত করুন' : 'Add')}
               </button>
             </div>
           </CardBody>

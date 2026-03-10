@@ -59,36 +59,78 @@ export default function Wishlist() {
           <div className="space-y-3">
             {items.map((item) => {
               const itemId = item._id || item.id;
+              // Link to the product page using source_product_id
+              const productLink = item.source_product_id
+                ? `/dashboard/product/${item.source_product_id}`
+                : null;
+              const targetReached = item.target_price != null && item.current_price != null && item.current_price <= item.target_price;
+
               return (
                 <Card key={itemId}>
                   <CardBody>
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
-                        <Link to={`/dashboard/product/${item.product_id}`}
-                          className="text-[15px] font-semibold text-heading hover:text-emerald-600 dark:hover:text-emerald-400 transition">
-                          {item.product_name || item.name || 'Product'}
-                        </Link>
-                        <div className="mt-1 flex items-center gap-3 flex-wrap">
+                        {/* Product name — clickable if we have a source_product_id */}
+                        {productLink ? (
+                          <Link to={productLink}
+                            className="text-[15px] font-semibold text-heading hover:text-emerald-600 dark:hover:text-emerald-400 transition">
+                            {item.product_name || item.name || 'Product'}
+                          </Link>
+                        ) : (
+                          <span className="text-[15px] font-semibold text-heading">
+                            {item.product_name || item.name || 'Product'}
+                          </span>
+                        )}
+
+                        {/* Price row */}
+                        <div className="mt-2 flex items-center gap-3 flex-wrap">
                           {item.current_price != null && (
                             <span className="text-[14px] font-bold text-emerald-600 dark:text-emerald-400">
                               ৳{item.current_price}
                             </span>
                           )}
-                          {item.target_price != null && (
-                            <span className="text-[12px] text-muted">
+                          {/* Target price — always show prominently */}
+                          {item.target_price != null ? (
+                            <span className={`inline-flex items-center gap-1 text-[12px] font-medium px-2 py-0.5 rounded-full ${
+                              targetReached
+                                ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                : 'bg-amber-50 dark:bg-gold/10 text-amber-700 dark:text-gold'
+                            }`}>
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
                               {isBangla ? 'টার্গেট: ৳' : 'Target: ৳'}{item.target_price}
                             </span>
+                          ) : (
+                            <span className="text-[11px] text-muted italic">
+                              {isBangla ? 'টার্গেট মূল্য নেই' : 'No target price'}
+                            </span>
                           )}
-                          {item.target_price && item.current_price && item.current_price <= item.target_price && (
+                          {targetReached && (
                             <Badge color="emerald">{isBangla ? 'টার্গেটে পৌঁছেছে!' : 'Target reached!'}</Badge>
                           )}
                         </div>
-                        {item.shop_name && (
-                          <p className="mt-1 text-[11px] text-muted">{item.shop_name}</p>
-                        )}
+
+                        {/* Meta */}
+                        <div className="mt-1.5 flex items-center gap-3 flex-wrap">
+                          {item.shop_name && (
+                            <p className="text-[11px] text-muted">{item.shop_name}</p>
+                          )}
+                          {/* View product link */}
+                          {productLink && (
+                            <Link to={productLink}
+                              className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-0.5">
+                              {isBangla ? 'পণ্য দেখুন' : 'View product'}
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                            </Link>
+                          )}
+                        </div>
                       </div>
+
+                      {/* Remove button */}
                       <button onClick={() => handleRemove(itemId)}
-                        className="ml-3 p-2 rounded-lg text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
+                        className="flex-shrink-0 p-2 rounded-lg text-muted hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
