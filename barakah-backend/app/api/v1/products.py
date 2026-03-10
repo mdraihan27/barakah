@@ -24,7 +24,7 @@ from app.schemas.product import (
 )
 from app.services.product_service import ProductService
 from app.services.notification_service import NotificationService
-from app.utils.file_upload import save_image
+from app.utils.file_upload import build_public_file_url, save_image
 
 logger = get_logger(__name__)
 
@@ -149,7 +149,7 @@ async def update_product(
         uploaded_urls = []
         for image in images:
             relative_path = await save_image(image, "products")
-            uploaded_urls.append(str(request.base_url).rstrip("/") + relative_path)
+            uploaded_urls.append(build_public_file_url(str(request.base_url), relative_path))
         payload["images"] = uploaded_urls
 
     product = await service.update_product(product_id=product_id, user=current_user, data=payload)

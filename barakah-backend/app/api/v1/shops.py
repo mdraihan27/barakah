@@ -14,7 +14,7 @@ from app.schemas.shop import (
     ShopResponse,
 )
 from app.services.shop_service import ShopService
-from app.utils.file_upload import save_image
+from app.utils.file_upload import build_public_file_url, save_image
 
 logger = get_logger(__name__)
 
@@ -112,7 +112,7 @@ async def update_shop(
 
     if image is not None:
         relative_path = await save_image(image, "shops")
-        payload["image_url"] = str(request.base_url).rstrip("/") + relative_path
+        payload["image_url"] = build_public_file_url(str(request.base_url), relative_path)
 
     shop = await service.update_shop(shop_id=shop_id, owner=current_user, data=payload)
     return ShopResponse(**shop)

@@ -27,7 +27,7 @@ from app.schemas.user import (
 )
 from app.services.auth_service import AuthService
 from app.services.google_service import exchange_google_code, get_google_auth_url
-from app.utils.file_upload import save_image
+from app.utils.file_upload import build_public_file_url, save_image
 
 logger = get_logger(__name__)
 
@@ -255,7 +255,7 @@ async def update_my_avatar(
     """Upload and set a custom profile image for the authenticated user."""
     logger.info("PATCH /auth/me/avatar — user %s", current_user["_id"])
     relative_path = await save_image(image, "users")
-    avatar_url = str(request.base_url).rstrip("/") + relative_path
+    avatar_url = build_public_file_url(str(request.base_url), relative_path)
     updated_user = await service.update_avatar(current_user["_id"], avatar_url)
     return _to_user_response(updated_user)
 
