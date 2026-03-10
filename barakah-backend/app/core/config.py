@@ -89,7 +89,6 @@ class Settings(BaseSettings):
         return normalized
 
     # ── Uploads ──────────────────────────────────────────────────────────
-    UPLOAD_DIR: str = "uploads"
     MAX_IMAGE_SIZE_MB: int = 5
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""

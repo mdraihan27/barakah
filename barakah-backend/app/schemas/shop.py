@@ -60,7 +60,7 @@ class ShopCreateRequest(BaseModel):
     name: str = Field(..., min_length=2, max_length=100, examples=["Barakah Grocery"])
     description: str = Field("", max_length=1000, examples=["Fresh halal groceries"])
     category: str = Field(..., min_length=2, max_length=50, examples=["grocery"])
-    image_url: str = Field("", max_length=2048, examples=["http://localhost:8000/uploads/shops/shop.jpg"])
+    image_url: str = Field("", max_length=2048, examples=["https://res.cloudinary.com/demo/image/upload/v1/barakah/shops/shop.jpg"])
     location: LocationSchema
     address: AddressSchema = Field(default_factory=AddressSchema)
 

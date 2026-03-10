@@ -3,8 +3,6 @@ Helpers for validating and saving uploaded image files.
 """
 
 import hashlib
-import os
-from pathlib import Path
 import time
 from uuid import uuid4
 
@@ -33,14 +31,22 @@ def build_public_file_url(base_url: str, stored_path: str) -> str:
     return base_url.rstrip("/") + stored_path
 
 
-def _cloudinary_enabled() -> bool:
-    has_cloud_name = bool(getattr(settings, "CLOUDINARY_CLOUD_NAME", ""))
-    has_unsigned = bool(getattr(settings, "CLOUDINARY_UPLOAD_PRESET", ""))
-    has_signed = bool(
-        getattr(settings, "CLOUDINARY_API_KEY", "")
-        and getattr(settings, "CLOUDINARY_API_SECRET", "")
+def _assert_cloudinary_configured() -> None:
+    has_cloud_name = bool(settings.CLOUDINARY_CLOUD_NAME)
+    has_unsigned = bool(settings.CLOUDINARY_UPLOAD_PRESET)
+    has_signed = bool(settings.CLOUDINARY_API_KEY and settings.CLOUDINARY_API_SECRET)
+
+    if has_cloud_name and (has_unsigned or has_signed):
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail=(
+            "Image uploads are unavailable. Configure Cloudinary with "
+            "CLOUDINARY_CLOUD_NAME plus CLOUDINARY_UPLOAD_PRESET or "
+            "CLOUDINARY_API_KEY/CLOUDINARY_API_SECRET."
+        ),
     )
-    return has_cloud_name and (has_unsigned or has_signed)
 
 
 async def _upload_to_cloudinary(content: bytes, filename: str, content_type: str, subdirectory: str) -> str:
@@ -90,24 +96,9 @@ async def _upload_to_cloudinary(content: bytes, filename: str, content_type: str
     return secure_url
 
 
-def get_upload_storage_dir() -> Path:
-    """
-    Resolve the writable filesystem directory for uploaded files.
-
-    On Vercel, the deployment filesystem is read-only except /tmp.
-    """
-    configured_dir = Path(settings.UPLOAD_DIR)
-    if configured_dir.is_absolute():
-        return configured_dir
-
-    if os.getenv("VERCEL") == "1":
-        return Path("/tmp") / configured_dir
-
-    return configured_dir
-
-
 def _validate_image(file: UploadFile) -> str:
-    extension = Path(file.filename or "").suffix.lower()
+    extension = (file.filename or "").lower().rsplit(".", 1)
+    extension = f".{extension[-1]}" if len(extension) > 1 else ""
     if extension not in ALLOWED_IMAGE_EXTENSIONS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -124,8 +115,9 @@ def _validate_image(file: UploadFile) -> str:
 
 async def save_image(file: UploadFile, subdirectory: str) -> str:
     """
-    Validate and save an image to <UPLOAD_DIR>/<subdirectory> and return relative path.
+    Validate and upload an image to Cloudinary.
     """
+    _assert_cloudinary_configured()
     extension = _validate_image(file)
 
     content = await file.read()
@@ -136,15 +128,5 @@ async def save_image(file: UploadFile, subdirectory: str) -> str:
             detail=f"Image too large. Max size is {settings.MAX_IMAGE_SIZE_MB}MB.",
         )
 
-    if _cloudinary_enabled():
-        filename = f"{uuid4().hex}{extension}"
-        return await _upload_to_cloudinary(content, filename, file.content_type or "", subdirectory)
-
-    target_dir = get_upload_storage_dir() / subdirectory
-    target_dir.mkdir(parents=True, exist_ok=True)
-
     filename = f"{uuid4().hex}{extension}"
-    target_file = target_dir / filename
-    target_file.write_bytes(content)
-
-    return f"/{settings.UPLOAD_DIR}/{subdirectory}/{filename}"
+    return await _upload_to_cloudinary(content, filename, file.content_type or "", subdirectory)
