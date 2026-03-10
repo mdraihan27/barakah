@@ -12,7 +12,7 @@ import PageShell from '../components/common/PageShell';
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const { isBangla } = useLanguage();
-  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated, user, refreshUser } = useAuth();
   const t = useMemo(() => (isBangla ? T.bn : T.en), [isBangla]);
 
   const [params] = useSearchParams();
@@ -23,10 +23,12 @@ export default function VerifyEmail() {
   const [verified, setVerified] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    // Only redirect away if the user is already authenticated AND already verified.
+    // If they are logged in but unverified, they should stay here to verify.
+    if (!authLoading && isAuthenticated && user?.is_email_verified) {
       navigate('/dashboard', { replace: true });
     }
-  }, [authLoading, isAuthenticated, navigate]);
+  }, [authLoading, isAuthenticated, user, navigate]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -39,6 +41,8 @@ export default function VerifyEmail() {
       await authAPI.verifyEmail(email, code);
       setVerified(true);
       toast.success(isBangla ? 'ইমেইল ভেরিফাই হয়েছে!' : 'Email verified!');
+      // Refresh user profile so is_email_verified flag updates in context
+      if (refreshUser) await refreshUser().catch(() => {});
     } catch (err) {
       const msg = err.response?.data?.detail;
       toast.error(typeof msg === 'string' ? msg : 'Verification failed');
@@ -137,9 +141,12 @@ export default function VerifyEmail() {
                 </form>
               ) : (
                 <div className="mt-8">
-                  <Link to="/login"
+                  <Link
+                    to={isAuthenticated ? "/dashboard" : "/login"}
                     className="inline-flex items-center gap-2 group relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-8 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-emerald-900/30 transition-all hover:shadow-emerald-500/20">
-                    <span className="relative z-10">{t.actionLogin}</span>
+                    <span className="relative z-10">
+                      {isAuthenticated ? (isBangla ? 'ড্যাশবোর্ডে যান' : 'Go to Dashboard') : t.actionLogin}
+                    </span>
                   </Link>
                 </div>
               )}

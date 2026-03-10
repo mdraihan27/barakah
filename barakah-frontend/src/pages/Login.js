@@ -40,9 +40,15 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      const data = await login(email, password);
       toast.success(isBangla ? 'সফলভাবে লগ ইন হয়েছে!' : 'Logged in successfully!');
-      navigate('/dashboard');
+      // If email is not verified, send user to verify page
+      const userData = data?.user;
+      if (userData && !userData.is_email_verified) {
+        navigate(`/verify-email?email=${encodeURIComponent(userData.email || email)}`);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       const msg = err.response?.data?.detail;
       toast.error(typeof msg === 'string' ? msg : 'Login failed. Check your credentials.');

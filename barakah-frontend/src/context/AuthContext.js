@@ -145,8 +145,11 @@ export function AuthProvider({ children }) {
 
   const signup = useCallback(async (data) => {
     const res = await authAPI.signup(data);
-    // Do NOT set tokens or user here — user must verify email before logging in.
-    // Just return the response so the caller can navigate to /verify-email.
+    // Store tokens/user so user is logged-in after signup.
+    // They will be redirected to /verify-email and remain there
+    // because VerifyEmail now only redirects verified users.
+    setTokens(res.data.tokens);
+    setUser(res.data.user);
     return res.data;
   }, []);
 
