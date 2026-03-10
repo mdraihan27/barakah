@@ -88,7 +88,7 @@ export default function PublicShopDetail() {
         {/* shop header */}
         <Card className="mb-6">
           <CardBody>
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-[480px_minmax(0,1fr)_auto] gap-5 lg:gap-6 items-start">
               <div>
                 {shop.image_url && (
                   <img src={shop.image_url} alt={shop.name} className="mb-3 h-48 lg:h-52 w-full rounded-xl object-cover border border-stone-200/70 dark:border-white/[0.08]" />
