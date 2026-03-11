@@ -55,6 +55,16 @@ const ownerNav = [
       </svg>
     ),
   },
+  {
+    labelKey: 'interestArea',
+    to: '/dashboard/interest-radius',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    ),
+  },
 ];
 
 const consumerNav = [
@@ -96,6 +106,11 @@ const consumerNav = [
     to: '/dashboard/profile',
     icon: ownerNav[4].icon,
   },
+  {
+    labelKey: 'interestArea',
+    to: '/dashboard/interest-radius',
+    icon: ownerNav[5].icon,
+  },
 ];
 
 export default function DashboardLayout({ children }) {
@@ -118,6 +133,7 @@ export default function DashboardLayout({ children }) {
         profile: 'প্রোফাইল',
         explore: 'এক্সপ্লোর',
         wishlist: 'উইশলিস্ট',
+        interestArea: 'আগ্রহের এলাকা',
         unread: 'অপঠিত',
         logout: 'লগ আউট',
       }
@@ -129,6 +145,7 @@ export default function DashboardLayout({ children }) {
         profile: 'Profile',
         explore: 'Explore',
         wishlist: 'Wishlist',
+        interestArea: 'Interest Area',
         unread: 'unread',
         logout: 'Logout',
       };

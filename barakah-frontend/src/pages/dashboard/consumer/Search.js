@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../LanguageContext';
+import { useAuth } from '../../../context/AuthContext';
 import { searchAPI } from '../../../api/search';
 import { useLocation } from '../../../hooks/useLocation';
 import { useDebounce } from '../../../hooks/useDebounce';
@@ -12,6 +13,7 @@ import EmptyState from '../../../components/common/EmptyState';
 
 export default function Search() {
   const { isBangla } = useLanguage();
+  const { user } = useAuth();
   const { lat, lng } = useLocation();
   const [query, setQuery] = useState('');
   const debouncedQuery = useDebounce(query, 400);
@@ -23,12 +25,12 @@ export default function Search() {
     if (!q || q.length < 2) { setResults([]); setSearched(false); return; }
     setLoading(true);
     try {
-      const res = await searchAPI.searchProducts(q, lat, lng);
+      const res = await searchAPI.searchProducts(q, lat, lng, user?.interest_radius_km || 10);
       setResults(res.data.results || res.data.products || res.data || []);
       setSearched(true);
     } catch { setResults([]); }
     finally { setLoading(false); }
-  }, [lat, lng]);
+  }, [lat, lng, user?.interest_radius_km]);
 
   useEffect(() => { doSearch(debouncedQuery); }, [debouncedQuery, doSearch]);
 

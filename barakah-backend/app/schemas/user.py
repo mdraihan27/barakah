@@ -61,6 +61,11 @@ class UpdateRoleRequest(BaseModel):
     role: str = Field(..., pattern="^(user|shop_owner)$", examples=["user", "shop_owner"])
 
 
+class UpdateInterestRadiusRequest(BaseModel):
+    """Payload to update the user's interest radius."""
+    radius_km: float = Field(..., gt=0, le=100, examples=[10.0])
+
+
 # =============================================================================
 # Response Schemas
 # =============================================================================
@@ -76,6 +81,7 @@ class UserResponse(BaseModel):
     auth_provider: str = "local"
     role: str = "user"
     avatar_url: Optional[str] = None
+    interest_radius_km: float = 10.0
     created_at: datetime
     updated_at: datetime
 

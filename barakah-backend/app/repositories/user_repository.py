@@ -92,6 +92,7 @@ class UserRepository:
                 "verification_code_expires_at": None,
                 "reset_code": None,
                 "reset_code_expires_at": None,
+                "interest_radius_km": user_data.get("interest_radius_km", 10.0),
                 "created_at": now,
                 "updated_at": now,
             }

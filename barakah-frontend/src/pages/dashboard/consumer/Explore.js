@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 import { useLanguage } from '../../../LanguageContext';
 import { shopsAPI } from '../../../api/shops';
 import { useLocation } from '../../../hooks/useLocation';
@@ -15,11 +16,13 @@ import LocationPicker from '../../../components/common/LocationPicker';
 const STORAGE_KEY = 'barakah-explore-location';
 
 export default function Explore() {
+  const { user } = useAuth();
   const { isBangla } = useLanguage();
   const { lat, lng, loading: geoLoading, error: geoError } = useLocation();
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [radius, setRadius] = useState(10);
+  const userRadius = user?.interest_radius_km || 10;
+  const [radius, setRadius] = useState(userRadius);
   const [view, setView] = useState('list'); // 'list' | 'map'
   const [selectedLocation, setSelectedLocation] = useState({ lat: null, lng: null });
   const [locationHydrated, setLocationHydrated] = useState(false);

@@ -13,6 +13,7 @@ import GoogleCallback from './pages/GoogleCallback';
 import Dashboard from './pages/dashboard/Dashboard';
 import Profile from './pages/dashboard/Profile';
 import SelectRole from './pages/dashboard/SelectRole';
+import InterestRadius from './pages/dashboard/InterestRadius';
 
 // Shop owner pages
 import MyShops from './pages/dashboard/shop/MyShops';
@@ -53,6 +54,7 @@ export default function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/dashboard/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       <Route path="/dashboard/select-role" element={<ProtectedRoute><SelectRole /></ProtectedRoute>} />
+      <Route path="/dashboard/interest-radius" element={<ProtectedRoute><InterestRadius /></ProtectedRoute>} />
 
       {/* Shop owner */}
       <Route path="/dashboard/shops" element={<ProtectedRoute><MyShops /></ProtectedRoute>} />

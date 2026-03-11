@@ -21,6 +21,7 @@ from app.schemas.user import (
     SendVerificationCodeRequest,
     SignupRequest,
     TokenResponse,
+    UpdateInterestRadiusRequest,
     UpdateRoleRequest,
     UserResponse,
     VerifyEmailRequest,
@@ -274,3 +275,21 @@ async def update_my_role(
     logger.info("PATCH /auth/me/role — user %s", current_user["_id"])
     updated_user = await service.update_role(current_user["_id"], body.role)
     return _to_user_response(updated_user)
+
+
+@router.patch(
+    "/interest-radius",
+    response_model=UserResponse,
+    summary="Update interest radius",
+)
+async def update_interest_radius(
+    body: UpdateInterestRadiusRequest,
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_db),
+):
+    """Set the user's interest radius (1–100 km) for nearby searches and alerts."""
+    logger.info("PATCH /auth/interest-radius — user %s, radius=%.1f", current_user["_id"], body.radius_km)
+    repo = UserRepository(db)
+    await repo.update_by_id(current_user["_id"], {"interest_radius_km": body.radius_km})
+    updated = await repo.find_by_id(current_user["_id"])
+    return _to_user_response(updated)

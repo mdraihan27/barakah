@@ -16,6 +16,7 @@ export const authAPI = {
     });
   },
   updateMyRole: (role) => API.patch('/auth/me/role', { role }),
+  updateInterestRadius: (radiusKm) => API.patch('/auth/interest-radius', { radius_km: radiusKm }),
   getGoogleOAuthURL: () => API.get('/auth/google'),
   getMe: () => API.get('/auth/me'),
 };

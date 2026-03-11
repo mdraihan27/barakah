@@ -31,6 +31,7 @@ async def _check_competitive_pricing() -> None:
     """
     For each product, find nearby shops selling the same product name.
     If a competitor has a cheaper price, notify the shop owner.
+    Uses each owner's interest_radius_km (falls back to NEARBY_RADIUS_KM).
     """
     db = get_database()
     product_repo = ProductRepository(db)
@@ -47,6 +48,18 @@ async def _check_competitive_pricing() -> None:
     if not shops_by_id:
         logger.debug("No active shops — skipping competitive pricing check")
         return
+
+    # Pre-load owner radius settings
+    owner_ids = list({s["owner_id"] for s in shops_by_id.values()})
+    owner_radius = {}
+    if owner_ids:
+        from bson import ObjectId
+        users_cursor = db["users"].find(
+            {"_id": {"$in": [ObjectId(oid) for oid in owner_ids]}},
+            {"interest_radius_km": 1},
+        )
+        async for u in users_cursor:
+            owner_radius[str(u["_id"])] = u.get("interest_radius_km", NEARBY_RADIUS_KM)
 
     # Get all products
     products_cursor = db["products"].find()
@@ -67,10 +80,13 @@ async def _check_competitive_pricing() -> None:
         if not shop or not shop.get("location"):
             continue
 
+        # Use the owner's preferred radius, or fallback
+        radius = owner_radius.get(shop["owner_id"], NEARBY_RADIUS_KM)
+
         # Find nearby shops
         lng, lat = shop["location"]["coordinates"]
         nearby_shops = await shop_repo.find_nearby(
-            lng=lng, lat=lat, radius_km=NEARBY_RADIUS_KM
+            lng=lng, lat=lat, radius_km=radius
         )
 
         for nearby_shop in nearby_shops:

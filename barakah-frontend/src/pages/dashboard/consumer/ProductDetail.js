@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../../LanguageContext';
+import { useAuth } from '../../../context/AuthContext';
 import { productsAPI } from '../../../api/products';
 import { wishlistAPI } from '../../../api/wishlist';
 import { shopsAPI } from '../../../api/shops';
@@ -17,6 +18,7 @@ const RECENTLY_VIEWED_STORAGE_KEY = 'barakah-recently-viewed';
 export default function ProductDetail() {
   const { id } = useParams();
   const { isBangla } = useLanguage();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [shop, setShop] = useState(null);
@@ -126,7 +128,7 @@ export default function ProductDetail() {
         source_shop_id: product?.shop_id,
         user_lat: userLat,
         user_lng: userLng,
-        radius_km: 10,
+        radius_km: user?.interest_radius_km || 10,
       });
 
       const isUpdate = !!existingWishlistItem;
