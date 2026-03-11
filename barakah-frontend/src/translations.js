@@ -10,30 +10,30 @@ export const T = {
     navHome: 'Home',
 
     bismillah: '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650',
-    heroTag: 'Grocery Price Comparison',
+    heroTag: 'Local Price Comparison',
     heroH1a: 'Compare Groceries,',
     heroH1b: 'Shop Smarter.',
     heroDesc:
-      'Barakah helps you compare grocery prices across local shops near you\u00a0 find the best deals, discover nearby grocers, and make informed decisions before you leave home.',
+      'Barakah helps you compare product prices across local shops near you find the best deals, discover nearby stores, and make informed decisions before you leave home.',
     heroCta1: 'I Own a Grocery Shop',
     heroCta2: "I'm Comparing Prices",
     scroll: 'Scroll',
 
     pathsTag: 'Two Perspectives, One Platform',
-    pathsH2: 'Built for grocers and their customers.',
-    pathsOwnerH3: 'For Grocery Owners',
-    pathsShopperH3: 'For Grocery Shoppers',
+    pathsH2: 'Built for shop owners and their customers.',
+    pathsOwnerH3: 'For Shop Owners',
+    pathsShopperH3: 'For Shoppers',
 
     ownerFeatures: [
       {
         num: '01',
         title: 'List Your Shop',
-        desc: 'Register your grocery shop with location, category, photos and operating hours. Let nearby customers discover you.',
+        desc: 'Register your shop with its location, category, photos, and operating hours. Let nearby customers discover you.',
       },
       {
         num: '02',
         title: 'Upload Your Prices',
-        desc: 'List your grocery products with images, descriptions, and pricing. Update daily to keep customers informed.',
+        desc: 'List your products with images, descriptions, and pricing. Update daily to keep customers informed.',
       },
       {
         num: '03',
@@ -49,18 +49,18 @@ export const T = {
     shopperFeatures: [
       {
         num: '01',
-        title: 'Browse Nearby Grocers',
-        desc: 'Your feed shows grocery shops closest to you first. Check their prices and products before you visit.',
+        title: 'Browse Nearby Shops',
+        desc: 'Your feed shows shops closest to you first. Check their prices and products before you visit.',
       },
       {
         num: '02',
         title: 'Compare Prices',
-        desc: 'Looking for a specific grocery item? Search across all shops  results sorted by distance, showing price and ratings.',
+        desc: 'Looking for a specific product? Search across all shops  results sorted by distance, showing price and ratings.',
       },
       {
         num: '03',
         title: 'Wishlist & Price Alerts',
-        desc: "Save grocery items you buy often. Get notified when a nearby shop offers them at the best price you've seen.",
+        desc: "Save items you buy often. Get notified when a nearby shop offers them at the best price you've seen.",
       },
       {
         num: '04',
@@ -70,11 +70,11 @@ export const T = {
     ],
 
     pricesTag: 'Price Intelligence',
-    pricesH2: 'Never overpay for groceries.',
+    pricesH2: 'Never overpay for products.',
     pricesDesc1:
-      'Track the grocery items you buy often. Barakah monitors prices across every shop in your area and alerts you whenever a better price pops up nearby\u00a0 so you always know where to go.',
+      'Track the items you buy often. Barakah monitors prices across every shop in your area and alerts you whenever a better price pops up nearby so you always know where to go.',
     pricesDesc2:
-      'Grocery owners get the same intelligence in reverse\u00a0 know when a nearby competitor is listing lower prices, so you can adjust with confidence.',
+      'Shop owners get the same intelligence in reverse know when a nearby competitor is listing lower prices, so you can adjust with confidence.',
 
     alertLabel: 'Price Alert',
     item1Name: 'Organic Sidr Honey',
@@ -109,11 +109,11 @@ export const T = {
     ayahTranslation: '"And cooperate in righteousness and piety." Al Ma\'idah 5:2',
     ctaH2: 'Start Comparing.',
     ctaDesc:
-      "Whether you're listing your grocery shop for locals to find or searching for the best prices in your area\u00a0 your place is here. We don't sell anything\u00a0 we just help you compare.",
-    ctaBtn1: 'Register Your Grocery Shop',
+      "Whether you're listing your shop for locals to find or searching for the best prices in your area your place is here. We don't sell anything we just help you compare.",
+    ctaBtn1: 'Register Your Shop',
     ctaBtn2: 'Start Comparing Prices',
 
-    footerTagline: 'Compare grocery prices near you, built with intention.',
+    footerTagline: 'Compare local prices near you, built with intention.',
     footerTop: 'Top',
     footerFeatures: 'Features',
     footerPrices: 'Prices',
@@ -163,10 +163,10 @@ export const T = {
     navHome: 'হোম',
 
     bismillah: 'بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ',
-    heroTag: 'মুদি দোকানের দাম তুলনা',
+    heroTag: 'লোকাল পণ্যের দাম তুলনা',
     heroH1a: 'দাম মিলিয়ে নিন,',
     heroH1b: 'আরও স্মার্টভাবে কিনুন।',
-    heroDesc: 'বাসা থেকে বের হওয়ার আগে আশেপাশের দোকানগুলোর দাম দেখে নিন। কোথায় ভালো ডিল আছে, কোন দোকান কাছে, সব এক জায়গায়।',
+    heroDesc: 'বাসা থেকে বের হওয়ার আগে আশেপাশের দোকানগুলোর পণ্যের দাম দেখে নিন। কোথায় ভালো ডিল আছে, কোন দোকান কাছে, সব এক জায়গায়।',
     heroCta1: 'আমি দোকান চালাই',
     heroCta2: 'আমি দাম তুলনা করছি',
     scroll: 'স্ক্রল করুন',
