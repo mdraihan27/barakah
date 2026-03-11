@@ -11,8 +11,8 @@ export const T = {
 
     bismillah: '\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650',
     heroTag: 'Local Price Comparison',
-    heroH1a: 'Compare Groceries,',
-    heroH1b: 'Shop Smarter.',
+    heroH1a: 'Compare Groceries',
+    heroH1b: 'Shop Smarter',
     heroDesc:
       'Barakah helps you compare product prices across local shops near you find the best deals, discover nearby stores, and make informed decisions before you leave home.',
     heroCta1: 'I Own a Grocery Shop',
@@ -107,6 +107,14 @@ export const T = {
 
     ayah: '\u0648\u064E\u062A\u064E\u0639\u064E\u0627\u0648\u064E\u0646\u064F\u0648\u0627 \u0639\u064E\u0644\u064E\u0649 \u0627\u0644\u0628\u0650\u0631\u0651\u0650 \u0648\u064E\u0627\u0644\u062A\u0651\u064E\u0642\u0652\u0648\u064E\u0649\u0670',
     ayahTranslation: '"And cooperate in righteousness and piety." Al Ma\'idah 5:2',
+    loginAyah: '\u064A\u064E\u0627 \u0623\u064E\u064A\u0651\u064F\u0647\u064E\u0627 \u0627\u0644\u0651\u064E\u0630\u0650\u064A\u0646\u064E \u0622\u0645\u064E\u0646\u064F\u0648\u0627 \u0644\u064E\u0627 \u062A\u064E\u0623\u0652\u0643\u064F\u0644\u064F\u0648\u0627 \u0623\u064E\u0645\u0652\u0648\u064E\u0627\u0644\u064E\u0643\u064F\u0645 \u0628\u064E\u064A\u0652\u0646\u064E\u0643\u064F\u0645 \u0628\u0650\u0627\u0644\u0652\u0628\u064E\u0627\u0637\u0650\u0644\u0650 \u0625\u0650\u0644\u0651\u064E\u0627 \u0623\u064E\u0646 \u062A\u064E\u0643\u064F\u0648\u0646\u064E \u062A\u0650\u062C\u064E\u0627\u0631\u064E\u0629\u064B \u0639\u064E\u0646 \u062A\u064E\u0631\u064E\u0627\u0636\u064D \u0645\u0650\u0646\u0643\u064F\u0645\u0652',
+    loginAyahTranslation: '"Do not consume one another\'s wealth unjustly, but only through trade by mutual consent." An-Nisa 4:29',
+    signupAyah: '\u0648\u064E\u0623\u064E\u062D\u064E\u0644\u0651\u064E \u0627\u0644\u0644\u0651\u064E\u0647\u064F \u0627\u0644\u0652\u0628\u064E\u064A\u0652\u0639\u064E \u0648\u064E\u062D\u064E\u0631\u0651\u064E\u0645\u064E \u0627\u0644\u0631\u0651\u0650\u0628\u064E\u0627',
+    signupAyahTranslation: '"Allah has permitted trade and forbidden interest." Al-Baqarah 2:275',
+    loginAyah: '\u064A\u064E\u0627 \u0623\u064E\u064A\u0651\u064F\u0647\u064E\u0627 \u0627\u0644\u0651\u064E\u0630\u0650\u064A\u0646\u064E \u0622\u0645\u064E\u0646\u064F\u0648\u0627 \u0644\u064E\u0627 \u062A\u064E\u0623\u0652\u0643\u064F\u0644\u064F\u0648\u0627 \u0623\u064E\u0645\u0652\u0648\u064E\u0627\u0644\u064E\u0643\u064F\u0645 \u0628\u064E\u064A\u0652\u0646\u064E\u0643\u064F\u0645 \u0628\u0650\u0627\u0644\u0652\u0628\u064E\u0627\u0637\u0650\u0644\u0650 \u0625\u0650\u0644\u0651\u064E\u0627 \u0623\u064E\u0646 \u062A\u064E\u0643\u064F\u0648\u0646\u064E \u062A\u0650\u062C\u064E\u0627\u0631\u064E\u0629\u064B \u0639\u064E\u0646 \u062A\u064E\u0631\u064E\u0627\u0636\u064D \u0645\u0650\u0646\u0643\u064F\u0645\u0652',
+    loginAyahTranslation: '"Do not consume one another\'s wealth unjustly, but only through trade by mutual consent." An-Nisa 4:29',
+    signupAyah: '\u0648\u064E\u0623\u064E\u062D\u064E\u0644\u0651\u064E \u0627\u0644\u0644\u0651\u064E\u0647\u064F \u0627\u0644\u0652\u0628\u064E\u064A\u0652\u0639\u064E \u0648\u064E\u062D\u064E\u0631\u0651\u064E\u0645\u064E \u0627\u0644\u0631\u0651\u0650\u0628\u064E\u0627',
+    signupAyahTranslation: '"Allah has permitted trade and forbidden interest." Al-Baqarah 2:275',
     ctaH2: 'Start Comparing.',
     ctaDesc:
       "Whether you're listing your shop for locals to find or searching for the best prices in your area your place is here. We don't sell anything we just help you compare.",
@@ -144,7 +152,7 @@ export const T = {
     helperRemember: 'Remember me',
     helperForgot: 'Forgot password?',
 
-    roleTitle: 'I am here as',
+    roleTitle: 'I am here to',
     roleOwnerTitle: 'Shop owner',
     roleOwnerDesc: 'List your shop and update prices.',
     roleConsumerTitle: 'Customer',
@@ -223,6 +231,10 @@ export const T = {
 
     ayah: 'وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَىٰ',
     ayahTranslation: '"এবং পুণ্য ও তাকওয়ার কাজে একে অপরকে সহায়তা করো।" আল মায়িদাহ ৫:২',
+    loginAyah: 'يَا أَيُّهَا الَّذِينَ آمَنُوا لَا تَأْكُلُوا أَمْوَالَكُم بَيْنَكُم بِالْبَاطِلِ إِلَّا أَن تَكُونَ تِجَارَةً عَن تَرَاضٍ مِنكُمْ',
+    loginAyahTranslation: '"তোমরা একে অপরের সম্পদ অন্যায়ভাবে গ্রাস করো না, তবে পরস্পর সম্মতিতে ব্যবসা করা বৈধ।" আন-নিসা ৪:২৯',
+    signupAyah: 'وَأَحَلَّ اللَّهُ الْبَيْعَ وَحَرَّمَ الرِّبَا',
+    signupAyahTranslation: '"আল্লাহ ব্যবসা-বাণিজ্য হালাল করেছেন এবং সুদ হারাম করেছেন।" আল-বাকারা ২:২৭৫',
     ctaH2: 'তুলনা শুরু করুন।',
     ctaDesc: 'আপনি দোকান চালান, বা শুধু সেরা দামে বাজার করতে চান। এখানে দুটোই পারবেন। আমরা কিছু বিক্রি করি না, শুধু তুলনা করতে সাহায্য করি।',
     ctaBtn1: 'দোকান রেজিস্টার করুন',

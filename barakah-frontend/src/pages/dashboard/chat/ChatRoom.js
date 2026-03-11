@@ -181,16 +181,15 @@ export default function ChatRoom() {
               const messageId = msg._id || msg.id || i;
               const showSeen = mine && lastSeenOutgoingMessageId && messageId === lastSeenOutgoingMessageId;
               return (
-                <div key={messageId} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                <div key={messageId} className={`flex mb-4 ${mine ? 'justify-end' : 'justify-start'}`}>
                   {!mine && (
                     <Avatar name={otherName || 'U'} src={otherAvatar} size="xs" className="self-end mr-2 mb-1" />
                   )}
                   <div>
-                    <div className={`min-w-[150px] sm:min-w-[180px] max-w-[92vw] sm:max-w-[88%] rounded-2xl px-4 py-2.5 ${
-                      mine
+                    <div className={`min-w-[150px] sm:min-w-[180px] max-w-[92vw] sm:max-w-[88%] rounded-2xl px-4 py-2.5 ${mine
                         ? 'bg-emerald-600 text-white rounded-br-md'
                         : 'bg-white/80 dark:bg-white/[0.06] border border-stone-200/60 dark:border-white/[0.08] text-body rounded-bl-md'
-                    }`}>
+                      }`}>
                       <p className="text-[13px] whitespace-pre-wrap break-words">{msg.text}</p>
                       <p className={`text-[10px] mt-1 ${mine ? 'text-white/60' : 'text-muted'}`}>
                         {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}

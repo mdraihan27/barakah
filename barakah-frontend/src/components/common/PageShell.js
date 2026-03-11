@@ -8,7 +8,7 @@ export default function PageShell({ children, className = '' }) {
 
   return (
     <div
-      className={`min-h-screen bg-page text-body selection:bg-emerald-400/30 overflow-x-hidden geo-bg transition-colors duration-300${
+      className={`min-h-screen flex flex-col bg-page text-body selection:bg-emerald-400/30 overflow-x-hidden geo-bg transition-colors duration-300${
         isBangla ? ' lang-bn' : ''
       } ${className}`}
     >

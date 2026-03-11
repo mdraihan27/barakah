@@ -72,15 +72,15 @@ export default function Login() {
         cta={{ to: '/signup', label: t.navSignup }}
       />
 
-      <main className="px-6 pb-8 pt-10">
+      <main className="flex-1 px-6 pb-8 pt-10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 items-center">
           <section className="hidden lg:block">
             <p className="text-[12px] uppercase tracking-[0.35em] text-emerald-700 dark:text-emerald-400 mb-5">{t.heroTag}</p>
             <h1 className="font-cerialebaran text-[clamp(2.4rem,4.8vw,4rem)] leading-[1.05] text-heading">{t.authLoginTitle}</h1>
             <p className="mt-5 text-[15px] leading-relaxed text-body max-w-md">{t.authLoginSubtitle}</p>
             <div className="mt-10 rounded-3xl border border-stone-200/70 dark:border-white/[0.08] bg-white/60 dark:bg-white/[0.03] backdrop-blur px-7 py-6">
-              <p className="font-cerialebaran text-gold text-lg" dir="rtl">{t.ayah}</p>
-              <p className="mt-2 text-[12px] text-muted italic">{t.ayahTranslation}</p>
+              <p className="font-cerialebaran text-gold text-lg" dir="rtl">{t.loginAyah}</p>
+              <p className="mt-2 text-[12px] text-muted italic">{t.loginAyahTranslation}</p>
             </div>
           </section>
 

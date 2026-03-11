@@ -41,7 +41,7 @@ export default function ForgotPassword() {
         ]}
       />
 
-      <main className="px-6 pt-12 pb-10">
+      <main className="flex-1 px-6 pt-12 pb-10">
         <div className="mx-auto max-w-lg">
           <div className="relative">
             <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-r from-emerald-700/18 via-gold/12 to-amber-600/18 blur" aria-hidden="true" />

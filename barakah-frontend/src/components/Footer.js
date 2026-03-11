@@ -53,7 +53,7 @@ export default function Footer({ t, links = [] }) {
       <div className="mx-auto h-px max-w-6xl bg-gradient-to-r from-transparent via-stone-300 dark:via-white/[0.06] to-transparent" />
 
       <footer className="mx-auto max-w-6xl px-6 py-14">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-6 lg:gap-96 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="font-cerialebaran text-lg bg-gradient-to-r from-emerald-700 to-amber-600 dark:from-emerald-200 dark:to-gold bg-clip-text text-transparent">
               Barakah

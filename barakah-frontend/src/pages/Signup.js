@@ -118,7 +118,7 @@ export default function Signup() {
         cta={{ to: '/login', label: t.navLogin }}
       />
 
-      <main className="px-6 pb-8 pt-10">
+      <main className="flex-1 px-6 pb-8 pt-10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-10 items-start">
           <section className="hidden lg:block pt-4">
             <p className="text-[12px] uppercase tracking-[0.35em] text-emerald-700 dark:text-emerald-400 mb-5">{t.pathsTag}</p>
@@ -130,8 +130,8 @@ export default function Signup() {
                 <p className="text-[14px] text-body leading-relaxed">{role === 'owner' ? t.roleOwnerDesc : t.roleConsumerDesc}</p>
               </div>
               <div className="rounded-3xl border border-stone-200/70 dark:border-white/[0.08] bg-white/60 dark:bg-white/[0.03] backdrop-blur px-7 py-6">
-                <p className="font-cerialebaran text-gold text-lg" dir="rtl">{t.ayah}</p>
-                <p className="mt-2 text-[12px] text-muted italic">{t.ayahTranslation}</p>
+                <p className="font-cerialebaran text-gold text-lg" dir="rtl">{t.signupAyah}</p>
+                <p className="mt-2 text-[12px] text-muted italic">{t.signupAyahTranslation}</p>
               </div>
             </div>
           </section>
