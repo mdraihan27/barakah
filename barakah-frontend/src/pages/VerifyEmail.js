@@ -151,10 +151,6 @@ export default function VerifyEmail() {
                 </div>
               )}
 
-              <div className="mt-10 rounded-3xl border border-stone-200/70 dark:border-white/[0.08] bg-white/60 dark:bg-white/[0.03] backdrop-blur px-7 py-6">
-                <p className="font-cerialebaran text-gold text-lg" dir="rtl">{t.ayah}</p>
-                <p className="mt-2 text-[12px] text-muted italic">{t.ayahTranslation}</p>
-              </div>
             </div>
           </div>
         </div>
