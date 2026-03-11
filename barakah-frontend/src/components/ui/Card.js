@@ -1,7 +1,7 @@
 export default function Card({ children, className = '', hover = true, ...rest }) {
   return (
     <div
-      className={`rounded-2xl border border-stone-200/70 dark:border-white/[0.06] bg-white/70 dark:bg-white/[0.02] backdrop-blur shadow-sm dark:shadow-none ${
+      className={`mb-5 rounded-2xl border border-stone-200/70 dark:border-white/[0.06] bg-white/70 dark:bg-white/[0.02] backdrop-blur shadow-sm dark:shadow-none ${
         hover
           ? 'transition-all duration-300 hover:shadow-md hover:border-stone-300 dark:hover:border-white/[0.1] dark:hover:bg-white/[0.035]'
           : ''
