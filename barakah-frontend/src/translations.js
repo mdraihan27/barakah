@@ -240,7 +240,7 @@ export const T = {
     ctaBtn1: 'দোকান রেজিস্টার করুন',
     ctaBtn2: 'দাম তুলনা শুরু করুন',
 
-    footerTagline: 'কাছের দোকানের দাম তুলনা করুন, মন দিয়ে বানানো।',
+    footerTagline: 'আপনার এলাকায় দাম তুলনা করুন।',
     footerTop: 'উপরে',
     footerFeatures: 'ফিচার',
     footerPrices: 'দাম',
