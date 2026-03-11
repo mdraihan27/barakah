@@ -112,11 +112,10 @@ export default function ShopDetail() {
         <div className="flex gap-1 mb-6 p-1 rounded-xl bg-stone-100/60 dark:bg-white/[0.03] w-fit">
           {tabs.map((t) => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              className={`px-4 py-2 rounded-lg text-[13px] font-medium transition ${
-                tab === t.key
+              className={`px-4 py-2 rounded-lg text-[13px] font-medium transition ${tab === t.key
                   ? 'bg-white dark:bg-white/[0.08] text-heading shadow-sm'
                   : 'text-muted hover:text-body'
-              }`}>
+                }`}>
               {t.label} ({t.count})
             </button>
           ))}
@@ -177,7 +176,7 @@ export default function ShopDetail() {
                       <div>
                         <StarRating rating={r.rating} size="sm" />
                         <p className="mt-1.5 text-[13px] text-body leading-relaxed">{r.comment || r.text || ''}</p>
-                        <p className="mt-1 text-[11px] text-muted">{r.user_name || 'Anonymous'} · {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}</p>
+                        <p className="mt-1 text-[11px] text-muted">{r.reviewer_name || 'Anonymous'} · {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}</p>
                       </div>
                     </div>
                   </CardBody>
